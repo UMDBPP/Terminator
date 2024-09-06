@@ -1,4 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "Terminator_Lib")(type "KiCad")(uri "/Users/michaelshipman/Developer/Terminator/Hardware/Libraries/Terminator_Lib.kicad_sym")(options "")(descr ""))
-)

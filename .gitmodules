@@ -1,0 +1,4 @@
+[submodule "Hardware/Libraries/kicad-lib"]
+	path = Hardware/Libraries/kicad-lib
+	url = https://github.com/UMDBPP/kicad-lib.git
+	branch = main
