@@ -5,3 +5,6 @@
 [submodule "Firmware/gen_proj/vendor/CMSIS"]
 	path = Firmware/gen_proj/vendor/CMSIS
 	url = https://github.com/ARM-software/CMSIS_5
+[submodule "Firmware/gen_proj/vendor/STM32L4_HAL"]
+	path = Firmware/gen_proj/vendor/STM32L4_HAL
+	url = https://github.com/STMicroelectronics/stm32l4xx_hal_driver.git

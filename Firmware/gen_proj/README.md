@@ -6,6 +6,8 @@ The structure of the project isn't too complicated.
 - **src**: this contains source files that YOU write, things like main.c and other small or libraries
 - **lib**: this is where you should put libraries you need to use for things like accessing I2C devices or parsing GPS data
 - **vendor**: this includes code written by ARM and ST which perform basic configuration functions (e.g. the basic assembly run by the processor at startup that puts your application code in the right place in memory), unless you know what you are doing in here don't touch
+    - **CMSIS**: this is the core stuff that configures the processor
+    - **STM32L4_HAL**: this is hardware abstraction layer code written by ST, it should make things like using ADCs and configuring GPIOs easier, it is documented in ST UM1884 (google it)
 
 # References
 Things I used to figure this out.
