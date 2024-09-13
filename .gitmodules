@@ -2,3 +2,6 @@
 	path = Hardware/Libraries/kicad-lib
 	url = https://github.com/UMDBPP/kicad-lib.git
 	branch = main
+[submodule "Firmware/gen_proj/vendor/CMSIS"]
+	path = Firmware/gen_proj/vendor/CMSIS
+	url = https://github.com/ARM-software/CMSIS_5
