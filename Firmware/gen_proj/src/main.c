@@ -18,8 +18,12 @@
 
 #include <stdint.h>
 
+#include "stm32l412xx.h"
+
 #include "stm32l4xx.h"
-#include "stm32l4xx_hal.h"
+#include "stm32l4xx_ll_gpio.h"
+
+LL_GPIO_InitTypeDef gpio_test;
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
 #warning \
@@ -27,7 +31,14 @@
 #endif
 
 int main(void) {
-    HAL_Init();
+
+    LL_GPIO_StructInit(&gpio_test);
+
+    gpio_test.Pin = LL_GPIO_PIN_13;
+    gpio_test.Mode = LL_GPIO_MODE_OUTPUT;
+
+    if (LL_GPIO_Init(GPIOB, &gpio_test) == ERROR)
+        while (1);
 
     while (1) {
     }
