@@ -41,3 +41,4 @@ Things I used to figure this out.
 - https://kleinembedded.com/stm32-without-cubeide-part-1-the-bare-necessities/
     - this really does explain most of it quite nicely, I had to figure some things out on my own to get this approach working with ST's provided startup and linker scripts
 - https://vivonomicon.com/2018/04/02/bare-metal-stm32-programming-part-1-hello-arm/
+- https://gist.github.com/maxtruxa/4b3929e118914ccef057f8a05c614b0f for the original Makefile
