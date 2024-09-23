@@ -19,9 +19,9 @@
 #include <stdint.h>
 
 #include "stm32l412xx.h"
-
 #include "stm32l4xx.h"
 #include "stm32l4xx_ll_gpio.h"
+#include "st_helper_func.h"
 
 LL_GPIO_InitTypeDef gpio_test;
 
@@ -31,7 +31,6 @@ LL_GPIO_InitTypeDef gpio_test;
 #endif
 
 int main(void) {
-
     LL_GPIO_StructInit(&gpio_test);
 
     gpio_test.Pin = LL_GPIO_PIN_13;
@@ -40,6 +39,7 @@ int main(void) {
     if (LL_GPIO_Init(GPIOB, &gpio_test) == ERROR)
         while (1);
 
-    while (1) {
-    }
+    set_gpio_pin(GPIOB, 13, 1);
+
+    while (1);
 }
