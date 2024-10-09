@@ -7985,16 +7985,6 @@
 	)
 	(wire
 		(pts
-			(xy 36.83 60.96) (xy 36.83 62.23)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "913c3947-b03a-4bf9-b7b3-ac29e72239d4")
-	)
-	(wire
-		(pts
 			(xy 92.71 17.78) (xy 92.71 19.05)
 		)
 		(stroke
@@ -8355,7 +8345,7 @@
 	)
 	(wire
 		(pts
-			(xy 48.26 85.09) (xy 50.8 85.09)
+			(xy 48.26 85.09) (xy 58.42 85.09)
 		)
 		(stroke
 			(width 0)
@@ -8873,16 +8863,6 @@
 		)
 		(uuid "f01ec17d-02bb-4e8d-9a13-02f877eacb43")
 	)
-	(wire
-		(pts
-			(xy 55.88 85.09) (xy 58.42 85.09)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f145e27d-d930-4dc1-9b02-10fbf880f4f0")
-	)
 	(polyline
 		(pts
 			(xy 229.87 12.7) (xy 229.87 72.39)
@@ -8905,7 +8885,7 @@
 	)
 	(wire
 		(pts
-			(xy 36.83 55.88) (xy 36.83 52.07)
+			(xy 36.83 52.07) (xy 36.83 55.88)
 		)
 		(stroke
 			(width 0)
@@ -13913,74 +13893,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:R_Small")
-		(at 53.34 85.09 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "b3625ea4-68b9-4588-a2ef-66f87f6c19a1")
-		(property "Reference" "R8"
-			(at 53.34 80.01 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "0"
-			(at 53.34 82.55 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 53.34 85.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 53.34 85.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small symbol"
-			(at 53.34 85.09 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "2"
-			(uuid "11ccd926-4ab8-4425-8192-e4ccacc1d6d7")
-		)
-		(pin "1"
-			(uuid "dceef65a-a880-4fcf-a1a5-4c53da0b67bb")
-		)
-		(instances
-			(project "Digital"
-				(path "/14eb5cc5-1068-4dbf-9d6e-49ddc6215ab5"
-					(reference "R8")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Mechanical:MountingHole")
 		(at 36.83 132.08 0)
 		(unit 1)
@@ -15511,7 +15423,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 36.83 62.23 0)
+		(at 36.83 55.88 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -15519,7 +15431,7 @@
 		(dnp no)
 		(uuid "eb584233-4459-4cec-b025-6b0097c8bdbc")
 		(property "Reference" "#PWR018"
-			(at 36.83 68.58 0)
+			(at 36.83 62.23 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15528,7 +15440,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 36.83 66.04 0)
+			(at 36.83 59.69 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15536,7 +15448,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 36.83 62.23 0)
+			(at 36.83 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15545,7 +15457,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 36.83 62.23 0)
+			(at 36.83 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15554,7 +15466,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 36.83 62.23 0)
+			(at 36.83 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -15699,75 +15611,6 @@
 			(project "Digital"
 				(path "/14eb5cc5-1068-4dbf-9d6e-49ddc6215ab5"
 					(reference "#PWR08")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small")
-		(at 36.83 58.42 180)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "f58ac113-ad5d-4789-a7e4-882d0d515913")
-		(property "Reference" "R5"
-			(at 35.56 57.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "10k"
-			(at 35.56 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 36.83 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 36.83 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor, small symbol"
-			(at 36.83 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "4ac9480a-ed61-4379-8814-1e9ef89cda9d")
-		)
-		(pin "2"
-			(uuid "891621e8-a6ed-4257-9a48-85a6fadd279f")
-		)
-		(instances
-			(project "Digital"
-				(path "/14eb5cc5-1068-4dbf-9d6e-49ddc6215ab5"
-					(reference "R5")
 					(unit 1)
 				)
 			)
