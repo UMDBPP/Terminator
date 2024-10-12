@@ -7,4 +7,4 @@
 ../lib/FRAM_lib/fram.c:73:5:fram_rdsr	16	static
 ../lib/FRAM_lib/fram.c:78:5:fram_wrsr	16	static
 ../lib/FRAM_lib/fram.c:83:5:fram_write	32	static
-../lib/FRAM_lib/fram.c:103:5:fram_read	32	static
+../lib/FRAM_lib/fram.c:105:5:fram_read	32	static

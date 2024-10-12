@@ -8,3 +8,6 @@
 [submodule "Firmware/gen_proj/vendor/STM32L4_HAL"]
 	path = Firmware/gen_proj/vendor/STM32L4_HAL
 	url = https://github.com/STMicroelectronics/stm32l4xx_hal_driver.git
+[submodule "Firmware/T1000/nucleo_fram_test_stripped/Firmware/T1000/nucleo_fram_test_stripped/lib/littlefs"]
+	path = Firmware/T1000/nucleo_fram_test_stripped/Firmware/T1000/nucleo_fram_test_stripped/lib/littlefs
+	url = https://github.com/littlefs-project/littlefs.git

@@ -24,7 +24,7 @@ int fram_init(fram_t *dev, SPI_TypeDef *SPIx, uint8_t cs_pin, uint8_t sck_pin,
     dev->hold_pin = 255;
 
 	// TODO actually make this driver use the given CS pin
-	LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_6);
+	LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_6);
 
     fram_get_id(dev);
 
@@ -86,6 +86,8 @@ int fram_write(fram_t *dev, SPI_TypeDef *SPIx, uint32_t addr, uint8_t *buf, uint
 	uint8_t addr_byte_1 = (addr >> 8) & 0xFF;
 	uint8_t addr_byte_2 = addr & 0xFF;
 
+	fram_wren(dev);
+
 	LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_6);
 
     spi_write(dev->spi_device, &cmd, 1);
@@ -93,7 +95,7 @@ int fram_write(fram_t *dev, SPI_TypeDef *SPIx, uint32_t addr, uint8_t *buf, uint
 	spi_write(dev->spi_device, &addr_byte_1, 1);
 	spi_write(dev->spi_device, &addr_byte_2, 1);
 
-	spi_write(dev->spi_device, &buf, num_bytes);
+	spi_write(dev->spi_device, buf, num_bytes);
 
     LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_6);
 
@@ -113,7 +115,7 @@ int fram_read(fram_t *dev, SPI_TypeDef *SPIx, uint32_t addr, uint8_t *buf, uint3
 	spi_write(dev->spi_device, &addr_byte_1, 1);
 	spi_write(dev->spi_device, &addr_byte_2, 1);
 
-	spi_read(dev->spi_device, &buf, num_bytes);
+	spi_read(dev->spi_device, buf, num_bytes);
 
     LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_6);
 	

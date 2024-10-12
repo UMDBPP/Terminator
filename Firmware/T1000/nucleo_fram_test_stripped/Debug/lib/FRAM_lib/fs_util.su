@@ -1,0 +1,11 @@
+../lib/FRAM_lib/fs_util.c:17:6:disk_set_fram	16	static
+../lib/FRAM_lib/fs_util.c:21:9:disk_status	24	static
+../lib/FRAM_lib/fs_util.c:27:9:disk_initialize	16	static
+../lib/FRAM_lib/fs_util.c:34:9:disk_read	32	static
+../lib/FRAM_lib/fs_util.c:47:9:disk_write	32	static
+../lib/FRAM_lib/fs_util.c:59:9:disk_ioctl	16	static
+../lib/FRAM_lib/fs_util.c:74:7:get_fattime	16	static
+../lib/FRAM_lib/fs_util.c:83:5:fs_flash_read	40	static
+../lib/FRAM_lib/fs_util.c:103:5:fs_flash_prog	40	static
+../lib/FRAM_lib/fs_util.c:124:5:fs_flash_erase	40	static
+../lib/FRAM_lib/fs_util.c:142:5:fs_flash_sync	16	static

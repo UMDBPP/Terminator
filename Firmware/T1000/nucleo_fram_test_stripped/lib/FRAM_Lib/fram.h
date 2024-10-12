@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "stm32l4xx_ll_spi.h"
+#include "lfs.h"
 
 #define WPEN_MASK 0x80
 #define BP1_MASK 0x08
@@ -44,5 +45,15 @@ int fram_init(fram_t *dev, SPI_TypeDef *SPIx, uint8_t cs_pin, uint8_t sck_pin,
 int fram_write(fram_t *dev, SPI_TypeDef *SPIx, uint32_t addr, uint8_t *buf, uint32_t num_bytes);
 
 int fram_read(fram_t *dev, SPI_TypeDef *SPIx, uint32_t addr, uint8_t *buf, uint32_t num_bytes);
+
+int fs_flash_read(const struct lfs_config *cfg, lfs_block_t block,
+        lfs_off_t off, void *buffer, lfs_size_t size);
+
+int fs_flash_prog(const struct lfs_config *cfg, lfs_block_t block,
+            lfs_off_t off, const void *buffer, lfs_size_t size);
+
+int fs_flash_erase(const struct lfs_config *cfg, lfs_block_t block);
+
+int fs_flash_sync(const struct lfs_config *c);
 
 #endif  // FRAM_lib

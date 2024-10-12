@@ -26,3 +26,5 @@ Core/Src \
 Core/Startup \
 Drivers/STM32L4xx_HAL_Driver/Src \
 lib/FRAM_lib \
+lib/ff15/source \
+lib/littlefs \

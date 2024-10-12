@@ -18,6 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "ff.h"
+#include "lfs.h"
+#include "fram.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -52,6 +55,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
+
+static uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data);
 
 /* USER CODE END PFP */
 
@@ -102,6 +107,7 @@ int main(void) {
     /* USER CODE BEGIN 2 */
 
 
+	// verify FRAM basic functionality
     LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_6);
 	fram_init(&memory, SPI2, 0, 0, 0, 0);
 
@@ -111,6 +117,99 @@ int main(void) {
 	fram_read(&memory, SPI2, 0x69, (uint8_t *)rbuf, 12);
 	fram_write(&memory, SPI2, 0x69, (uint8_t *)buf, 12);
 	fram_read(&memory, SPI2, 0x69, (uint8_t *)rbuf, 12);
+
+	// FatFS test - can't work FRAM too small
+	//FATFS fs;           /* Filesystem object */
+	//FIL fil;            /* File object */
+    //FRESULT res;        /* API result code */
+    //UINT bw;            /* Bytes written */
+    //BYTE work[FF_MAX_SS]; /* Work area (larger is better for processing time) */
+
+	//const MKFS_PARM opt = {FM_FAT, 0, 0, 0, 0};
+
+	//disk_set_fram(&memory);
+
+    /* Format the default drive with default parameters */
+    //res = f_mkfs("", &opt, work, sizeof work);
+    // inspect res
+
+    /* Give a work area to the default drive */
+    //f_mount(&fs, "", 0);
+
+    /* Create a file as new */
+    //res = f_open(&fil, "hello.txt", FA_CREATE_NEW | FA_WRITE);
+    // inspect res
+
+    /* Write a message */
+    //f_write(&fil, "Hello, World!\r\n", 15, &bw);
+    // inspect res
+
+    /* Close the file */
+    //f_close(&fil);
+
+    /* Unregister work area */
+    //f_mount(0, "", 0);
+
+
+	//littleFS test
+	disk_set_fram(&memory);	
+
+// variables used by the filesystem
+lfs_t lfs;
+lfs_file_t file;
+
+// configuration of the filesystem is provided by this struct
+const struct lfs_config cfg = {
+    // block device operations
+    .read  = fs_flash_read,
+    .prog  = fs_flash_prog,
+    .erase = fs_flash_erase,
+    .sync  = fs_flash_sync,
+
+    // block device configuration
+    .read_size = 1,
+    .prog_size = 1,
+    .block_size = 128,
+    .block_count = 64,
+    .cache_size = 1,
+    .lookahead_size = 16,
+    .block_cycles = -1,
+};
+
+
+
+    // mount the filesystem
+    int err = lfs_mount(&lfs, &cfg);
+
+    // reformat if we can't mount the filesystem
+    // this should only happen on the first boot
+    if (err) {
+        lfs_format(&lfs, &cfg);
+        lfs_mount(&lfs, &cfg);
+    }
+
+    // read current count
+    uint32_t boot_count = 0;
+    lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
+    lfs_file_read(&lfs, &file, &boot_count, sizeof(boot_count));
+
+    // update boot count
+    boot_count += 1;
+    lfs_file_rewind(&lfs, &file);
+    lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
+
+    // remember the storage is not updated until the file is closed successfully
+    lfs_file_close(&lfs, &file);
+
+    // release any resources we were using
+    lfs_unmount(&lfs);
+
+    // print the boot count
+    printf("boot_count: %d\n", boot_count);
+
+
+
+
 
     /* USER CODE END 2 */
 
@@ -278,13 +377,32 @@ void assert_failed(uint8_t *file, uint32_t line) {
 void spi_read(SPI_TypeDef *spix, uint8_t *const buf,
                               uint32_t num_bytes) {
     for (int i = 0; i < num_bytes; i++) {
-	    LL_SPI_TransmitData8(spix, 0x00);
-	    buf[i] = LL_SPI_ReceiveData8(spix);
+	    buf[i] = SPI_TxRx(spix, 0x00);
     }
 }
 
 void spi_write(SPI_TypeDef *spix, const uint8_t *const buf,
                                uint32_t num_bytes) {
-    for (int i = 0; i < num_bytes; i++) LL_SPI_TransmitData8(spix, buf[i]);
+    for (int i = 0; i < num_bytes; i++) SPI_TxRx(spix, buf[i]);
+
+	// 5x8-bit reads to empty 32-bit RX FIFO
+	// it's not entirely clear to me why transmitted data was appearing in the RX FIFO
+	// TODO investigate the proper way to do this
+	// LL_SPI_ReceiveData8(spix);
+	// LL_SPI_ReceiveData8(spix);
+	// LL_SPI_ReceiveData8(spix);
+	// LL_SPI_ReceiveData8(spix);
+	// LL_SPI_ReceiveData8(spix);
 }
 
+// Lifted and modified from https://github.com/eziya/STM32_LL_EXAMPLES
+// is blocking
+static uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data) {
+  // transmit
+  LL_SPI_TransmitData8(spix, data);
+  while(!LL_SPI_IsActiveFlag_TXE(spix));
+
+  // receive
+  while(!LL_SPI_IsActiveFlag_RXNE(spix));
+  return LL_SPI_ReceiveData8(spix);
+}
