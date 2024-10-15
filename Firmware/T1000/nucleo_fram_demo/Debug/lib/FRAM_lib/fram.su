@@ -1,0 +1,10 @@
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h:956:22:LL_GPIO_SetOutputPin	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h:985:22:LL_GPIO_ResetOutputPin	16	static
+../lib/FRAM_lib/fram.c:14:5:fram_init	24	static
+../lib/FRAM_lib/fram.c:34:5:fram_get_id	24	static
+../lib/FRAM_lib/fram.c:50:5:fram_wren	24	static
+../lib/FRAM_lib/fram.c:63:5:fram_wrdi	24	static
+../lib/FRAM_lib/fram.c:73:5:fram_rdsr	16	static
+../lib/FRAM_lib/fram.c:78:5:fram_wrsr	16	static
+../lib/FRAM_lib/fram.c:83:5:fram_write	32	static
+../lib/FRAM_lib/fram.c:105:5:fram_read	32	static
