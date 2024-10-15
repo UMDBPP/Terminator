@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"stm32l4xx_ll_spi.h": "c",
+			"stdint.h": "c",
+			"stm32l4xx_ll_crs.h": "c"
+		}
+	}
+}

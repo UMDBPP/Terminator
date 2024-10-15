@@ -14,3 +14,6 @@
 [submodule "Firmware/T1000/Firmware/T1000/nucleo_fram_demo/Firmware/T1000/nucleo_fram_test_stripped/lib/littlefs"]
 	path = Firmware/T1000/Firmware/T1000/nucleo_fram_demo/Firmware/T1000/nucleo_fram_test_stripped/lib/littlefs
 	url = https://github.com/littlefs-project/littlefs.git
+[submodule "Firmware/T1000/nucleo_pwm_test/Firmware/T1000/nucleo_pwm_test/Firmware/T1000/nucleo_fram_test_stripped"]
+	path = Firmware/T1000/nucleo_pwm_test/Firmware/T1000/nucleo_pwm_test/Firmware/T1000/nucleo_fram_test_stripped
+	url = https://github.com/littlefs-project/littlefs.git
