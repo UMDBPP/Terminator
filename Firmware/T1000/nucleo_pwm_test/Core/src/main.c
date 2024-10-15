@@ -109,7 +109,8 @@ int main(void) {
   /* USER CODE BEGIN 2 */
 
   LL_TIM_EnableCounter(TIM1);
-  LL_TIM_CC_EnableChannel(TIM1, (LL_TIM_CHANNEL_CH1 || LL_TIM_CHANNEL_CH1N));
+  LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1N);
+  LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1);
   LL_TIM_OC_SetCompareCH1(TIM1, 32768);
   LL_TIM_EnableAllOutputs(TIM1);
   /* USER CODE END 2 */
