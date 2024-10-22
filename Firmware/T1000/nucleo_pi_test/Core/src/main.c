@@ -137,7 +137,7 @@ int main(void) {
   LL_TIM_EnableCounter(TIM1);
   LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1N);
   LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1);
-  LL_TIM_OC_SetCompareCH1(TIM1, 0);
+  LL_TIM_OC_SetCompareCH1(TIM1, 50);
   LL_TIM_EnableAllOutputs(TIM1);
 
   LL_ADC_Enable(ADC1);
@@ -162,8 +162,8 @@ int main(void) {
     realValue =
         __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adcValCh1, LL_ADC_RESOLUTION_12B);
 
-    PIDController_Update(&pid, 5.0f, (float)realValue);
-    LL_TIM_OC_SetCompareCH1(TIM1, (uint32_t)pid.out);
+    // PIDController_Update(&pid, 5.0f, (float)realValue);
+    // LL_TIM_OC_SetCompareCH1(TIM1, (uint32_t)pid.out);
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
   }

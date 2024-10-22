@@ -19,8 +19,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_spi.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_system.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_utils.h \
- ../lib/ff15/source/ff.h ../lib/ff15/source/ffconf.h \
- ../lib/littlefs/lfs.h ../lib/littlefs/lfs_util.h ../lib/FRAM_Lib/fram.h
+ ../lib/FRAM_Lib/fram.h ../lib/littlefs/lfs.h ../lib/littlefs/lfs_util.h
 ../Core/Inc/main.h:
 ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l412xx.h:
 ../Drivers/CMSIS/Include/core_cm4.h:
@@ -42,8 +41,6 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_spi.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_system.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_utils.h:
-../lib/ff15/source/ff.h:
-../lib/ff15/source/ffconf.h:
+../lib/FRAM_Lib/fram.h:
 ../lib/littlefs/lfs.h:
 ../lib/littlefs/lfs_util.h:
-../lib/FRAM_Lib/fram.h:

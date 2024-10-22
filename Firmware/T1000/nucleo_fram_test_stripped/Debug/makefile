@@ -13,7 +13,6 @@ INCLUDES := \
 	-I../Drivers/CMSIS/Device/ST/STM32L4xx/Include \
 	-I../Drivers/CMSIS/Include \
 	-I../lib/FRAM_Lib \
-	-I../lib/ff15/source \
 	-I../lib/littlefs
 
 # All of the sources participating in the build are defined here
@@ -21,7 +20,6 @@ INCLUDES := \
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include lib/FRAM_lib/subdir.mk
 -include lib/littlefs/subdir.mk
--include lib/ff15/source/subdir.mk
 -include Core/startup/subdir.mk
 -include Core/src/subdir.mk
 -include objects.mk
@@ -74,7 +72,7 @@ main-build: nucleo_fram_dev.elf secondary-outputs
 
 # Tool invocations
 nucleo_fram_dev.elf nucleo_fram_dev.map: $(OBJS) $(USER_OBJS) /Users/michaelshipman/Developer/Terminator/Firmware/T1000/nucleo_fram_test/STM32L412R8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "nucleo_fram_dev.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"../STM32L412R8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="nucleo_fram_dev.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "nucleo_fram_dev.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"../STM32L412R8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="nucleo_fram_dev.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group && cp nucleo_fram_dev.elf test.elf
 	@echo 'Finished building target: $@'
 	@echo ' '
 

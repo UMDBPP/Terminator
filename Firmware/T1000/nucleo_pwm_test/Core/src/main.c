@@ -111,7 +111,7 @@ int main(void) {
   LL_TIM_EnableCounter(TIM1);
   LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1N);
   LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH1);
-  LL_TIM_OC_SetCompareCH1(TIM1, 32768);
+  LL_TIM_OC_SetCompareCH1(TIM1, 2);
   LL_TIM_EnableAllOutputs(TIM1);
   /* USER CODE END 2 */
 
@@ -272,7 +272,7 @@ static void MX_TIM1_Init(void) {
   /* USER CODE END TIM1_Init 1 */
   TIM_InitStruct.Prescaler = 1;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 65535;
+  TIM_InitStruct.Autoreload = 3;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
   TIM_InitStruct.RepetitionCounter = 0;
   LL_TIM_Init(TIM1, &TIM_InitStruct);
