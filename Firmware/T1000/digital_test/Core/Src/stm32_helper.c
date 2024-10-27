@@ -1,4 +1,6 @@
-#include "main.h"
+#include "stm32_helper.h"
+#include <stdlib.h>
+#include <string.h>
 
 void spi_read(SPI_TypeDef *spix, uint8_t *const buf, uint32_t num_bytes) {
   for (int i = 0; i < num_bytes; i++) {
@@ -14,7 +16,7 @@ void spi_write(SPI_TypeDef *spix, const uint8_t *const buf,
 
 // Lifted and modified from https://github.com/eziya/STM32_LL_EXAMPLES
 // is blocking
-static uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data) {
+uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data) {
   // transmit
   LL_SPI_TransmitData8(spix, data);
   while (!LL_SPI_IsActiveFlag_TXE(spix))
@@ -39,9 +41,8 @@ int8_t I2C_MasterTx(uint8_t devAddr, uint8_t *buffer, uint16_t len,
   LL_I2C_GenerateStartCondition(I2C1);
 
   // 2. check start bit flag
-  while (!LL_I2C_IsActiveFlag_SB(I2C1)) {
-    LL_mDelay(1);
-    if (cnt++ > ms)
+  while (!LL_I2C_IsActiveFlag_BUSY(I2C1)) {
+    if (cnt++ > (ms * 25000))
       return -1;
   }
 
@@ -49,20 +50,18 @@ int8_t I2C_MasterTx(uint8_t devAddr, uint8_t *buffer, uint16_t len,
   LL_I2C_TransmitData8(I2C1, (devAddr << 1) | 0x00);
 
   // 4. wait address sent
-  while (!LL_I2C_IsActiveFlag_ADDR(I2C1)) {
-    LL_mDelay(1);
-    if (cnt++ > ms)
+  while (!LL_I2C_IsActiveFlag_TXE(I2C1)) {
+    if (cnt++ > (ms * 25000))
       return -1;
   }
 
   // 5. clear ADDR flag
-  LL_I2C_ClearFlag_ADDR(I2C1);
+  // LL_I2C_ClearFlag_ADDR(I2C1);
 
   // 6. check TXE flag & write data
   for (int i = 0; i < len; i++) {
     while (!LL_I2C_IsActiveFlag_TXE(I2C1)) {
-      LL_mDelay(1);
-      if (cnt++ > ms)
+      if (cnt++ > (ms * 25000))
         return -1;
     }
 
@@ -70,9 +69,8 @@ int8_t I2C_MasterTx(uint8_t devAddr, uint8_t *buffer, uint16_t len,
   }
 
   // 7. wait BTF flag (TXE flag set & empty DR condition)
-  while (!LL_I2C_IsActiveFlag_BTF(I2C1)) {
-    LL_mDelay(1);
-    if (cnt++ > ms)
+  while (!LL_I2C_IsActiveFlag_TXE(I2C1)) {
+    if (cnt++ > (ms * 25000))
       return -1;
   }
 
@@ -95,13 +93,19 @@ int8_t I2C_MasterRx(uint8_t devAddr, uint8_t *buffer, uint8_t len,
     LL_I2C_AcknowledgeNextData(I2C1, LL_I2C_ACK);
   }
 
+  // LL_I2C_SetSlaveAddr(I2C1, (uint32_t) devAddr);
+  // LL_I2C_SetTransferRequest(I2C1, LL_I2C_REQUEST_READ);
+
+  LL_I2C_HandleTransfer(I2C1, (uint32_t)devAddr, LL_I2C_ADDRSLAVE_7BIT,
+                        (uint32_t)len, LL_I2C_MODE_AUTOEND,
+                        LL_I2C_GENERATE_START_READ);
+
   // 2. start condition
   LL_I2C_GenerateStartCondition(I2C1);
 
   // 3. check start bit flag
-  while (!LL_I2C_IsActiveFlag_SB(I2C1)) {
-    LL_mDelay(1);
-    if (cnt++ > ms)
+  while (LL_I2C_IsActiveFlag_BUSY(I2C1)) {
+    if (cnt++ > (ms * 25000))
       return -1;
   }
 
@@ -109,14 +113,13 @@ int8_t I2C_MasterRx(uint8_t devAddr, uint8_t *buffer, uint8_t len,
   LL_I2C_TransmitData8(I2C1, (devAddr << 1) | 0x01);
 
   // 5. wait address sent
-  while (!LL_I2C_IsActiveFlag_ADDR(I2C1)) {
-    LL_mDelay(1);
-    if (cnt++ > ms)
+  while (!LL_I2C_IsActiveFlag_TXE(I2C1)) {
+    if (cnt++ > (ms * 25000))
       return -1;
   }
 
   // 6. clear ADDR flag
-  LL_I2C_ClearFlag_ADDR(I2C1);
+  // LL_I2C_ClearFlag_ADDR(I2C1);
 
   // 7. check RXNE flag & read data
   for (int i = 0; i < len; i++) {
@@ -126,8 +129,7 @@ int8_t I2C_MasterRx(uint8_t devAddr, uint8_t *buffer, uint8_t len,
     }
 
     while (!LL_I2C_IsActiveFlag_RXNE(I2C1)) {
-      LL_mDelay(1);
-      if (cnt++ > ms)
+      if (cnt++ > (ms * 25000))
         return -1;
     }
 

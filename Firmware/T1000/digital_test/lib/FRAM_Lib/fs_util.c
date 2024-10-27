@@ -4,7 +4,7 @@
 #include "fram.h"
 #include "lfs.h"
 
-#include "stm32l412xx.h"
+#include "stm32l422xx.h"
 #include "stm32l4xx_ll_gpio.h"
 #include "stm32l4xx_ll_spi.h"
 

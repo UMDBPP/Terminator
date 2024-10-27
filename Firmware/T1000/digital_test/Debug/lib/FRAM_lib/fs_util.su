@@ -1,0 +1,5 @@
+../lib/FRAM_lib/fs_util.c:17:6:disk_set_fram	12	static
+../lib/FRAM_lib/fs_util.c:90:5:fs_flash_read	40	static
+../lib/FRAM_lib/fs_util.c:107:5:fs_flash_prog	40	static
+../lib/FRAM_lib/fs_util.c:125:5:fs_flash_erase	40	static
+../lib/FRAM_lib/fs_util.c:140:5:fs_flash_sync	16	static

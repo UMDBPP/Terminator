@@ -1,5 +1,11 @@
 #include "main.h"
 
+#include <string.h>
+
+#include "fram.h"
+#include "lfs.h"
+#include "stm32_helper.h"
+
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
@@ -7,8 +13,58 @@ static void MX_COMP1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_LPTIM1_Init(void);
 
 static uint32_t read_adc1(void);
+void get_gps_data(void);
+void read_log(void);
+
+#define LOG_FLAG 0x01
+
+static uint32_t flags = 0;
+
+fram_t memory;
+
+struct _log_item {
+  uint32_t time;
+
+  uint32_t lat_int;
+  uint32_t lat_frac;
+  char lat_dir;
+
+  uint32_t lon_int;
+  uint32_t lon_frac;
+  char lon_dir;
+
+  uint32_t altitude;
+
+  uint32_t date;
+} log_item;
+
+static char log_buf[100] = {0};
+
+// configuration of the filesystem is provided by this struct
+const struct lfs_config cfg = {
+    // block device operations
+    .read = fs_flash_read,
+    .prog = fs_flash_prog,
+    .erase = fs_flash_erase,
+    .sync = fs_flash_sync,
+
+    // block device configuration
+    .read_size = 1,
+    .prog_size = 1,
+    .block_size = 128,
+    .block_count = 64,
+    .cache_size = 1,
+    .lookahead_size = 16,
+    .block_cycles = -1,
+};
+
+// variables used by the filesystem
+lfs_t lfs;
+lfs_file_t file;
+lfs_file_t log;
 
 /**
  * @brief  The application entry point.
@@ -34,24 +90,198 @@ int main(void) {
   MX_I2C1_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
+  MX_LPTIM1_Init();
 
   // Enable PWM channel outputs
   // LL_TIM_EnableCounter(TIM1);
-  LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 || LL_TIM_CHANNEL_CH3N);
-  LL_TIM_OC_SetCompareCH1(TIM1, 0); // change this
-  LL_TIM_EnableAllOutputs(TIM1);
+  // LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
+  // LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
+  // LL_TIM_EnableAllOutputs(TIM1);
 
-  // Enable ADC1
+  // enable LPTIM1 which triggers interrupt every ~30 seconds
+  LL_LPTIM_Enable(LPTIM1);
+  LL_LPTIM_EnableIT_ARRM(LPTIM1);
+  LL_LPTIM_SetAutoReload(LPTIM1, 8533);
+  LL_LPTIM_StartCounter(LPTIM1, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
+
+  // Enable Peripherals
   LL_ADC_Enable(ADC1);
+  LL_I2C_Enable(I2C1);
+  LL_SPI_Enable(SPI1);
+
+  LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_0); // Radio NSS high
+
+  fram_init(&memory, SPI1, 0, 0, 0, 0);
+
+  // mount the filesystem
+  int err = lfs_mount(&lfs, &cfg);
+
+  // reformat if we can't mount the filesystem
+  // this should only happen on the first boot
+  if (err) {
+    exit(-1); // trouble mounting FS
+    // lfs_format(&lfs, &cfg);
+    // lfs_mount(&lfs, &cfg);
+  }
+
+  // read current count
+  uint32_t boot_count = 0;
+  lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
+  lfs_file_read(&lfs, &file, &boot_count, sizeof(boot_count));
+
+  // update boot count
+  boot_count += 1;
+  lfs_file_rewind(&lfs, &file);
+  lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
+
+  // remember the storage is not updated until the file is closed successfully
+  lfs_file_close(&lfs, &file);
+
+  // release any resources we were using
+  lfs_unmount(&lfs);
+
+  err = 0;
+
+  read_log();
+
+  log_item.lat_dir = '0';
+  log_item.lon_dir = '0';
 
   while (1) {
+
+    if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) ||
+        (flags & LOG_FLAG)) { // flags & LOG_FLAG // regular logging event
+
+      LL_TIM_EnableCounter(TIM1);
+      LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
+      LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
+      LL_TIM_EnableAllOutputs(TIM1);
+
+      get_gps_data();
+
+      err = lfs_mount(&lfs, &cfg);
+
+      if (err) {
+        exit(-1); // trouble mounting FS
+        // lfs_format(&lfs, &cfg);
+        // lfs_mount(&lfs, &cfg);
+      }
+
+      lfs_file_open(&lfs, &log, "flight_log",
+                    LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
+
+      sprintf(log_buf, "%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n", log_item.time,
+              log_item.lat_int, log_item.lat_frac, log_item.lat_dir,
+              log_item.lon_int, log_item.lon_frac, log_item.lon_dir,
+              log_item.altitude, log_item.date);
+      log_buf[99] = 0x00;
+
+      lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
+
+      lfs_file_close(&lfs, &log);
+      lfs_unmount(&lfs);
+      flags = flags & ~(LOG_FLAG);
+
+      LL_TIM_DisableCounter(TIM1);
+
+      LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
+    }
   }
 }
 
+// this function waits for a NMEA GGA message and parses it into the log item
+// struct above
+void get_gps_data() {
+
+  static char buf[100];
+  static uint32_t len = 100;
+  static uint32_t i = 0;
+
+  while (1) { // poll I2C bus until end of line is received
+
+    LL_I2C_HandleTransfer(I2C1, (0x42 << 1), LL_I2C_ADDRSLAVE_7BIT, 1,
+                          LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+
+    while (LL_I2C_IsActiveFlag_RXNE(I2C1) == 0)
+      ;
+
+    buf[i] = (char)LL_I2C_ReceiveData8(I2C1);
+
+    if (buf[i] == '$') {
+      i = 0;
+      buf[i] = '$';
+    }
+
+    if (i >= (len - 1) || buf[i] == 10) {
+      buf[len - 1] = 0x00;
+      i = 0;
+
+      if (strncmp((buf + 3), "GGA", 3) == 0) { // parse GGA message
+
+        sscanf(buf, "%*[^,],%lu.%*lu,%lu.%lu,%c,%lu.%lu,%c,%*d,%*d,%*d,%lu",
+               &(log_item.time), &(log_item.lat_int), &(log_item.lat_frac),
+               &(log_item.lat_dir), &(log_item.lon_int), &(log_item.lon_frac),
+               &(log_item.lon_dir), &(log_item.altitude));
+        break;
+      }
+
+      if (strncmp((buf + 3), "RMC", 3) == 0) { // parse RMC message
+
+        sscanf(buf,
+               "%*[^,],%lu,%*c,%lu.%lu,%c,%lu.%lu,%c,%*lu.%*lu,%*lu.%*lu,%lu",
+               &(log_item.time), &(log_item.lat_int), &(log_item.lat_frac),
+               &(log_item.lat_dir), &(log_item.lon_int), &(log_item.lon_frac),
+               &(log_item.lon_dir), &(log_item.altitude), &(log_item.date));
+      }
+    }
+
+    if (buf[i] != 0xFF)
+      i++;
+  }
+}
+
+// read the log file line by line
+void read_log() {
+
+  static char buf[100] = {0};
+  uint32_t file_size = 0;
+
+  int err = lfs_mount(&lfs, &cfg);
+
+  if (err) {
+    exit(-1); // trouble mounting FS
+    // lfs_format(&lfs, &cfg);
+    // lfs_mount(&lfs, &cfg);
+  }
+
+  lfs_file_open(&lfs, &log, "flight_log", LFS_O_RDONLY);
+  lfs_file_rewind(&lfs, &log);
+
+  file_size = lfs_file_size(&lfs, &log);
+
+  uint32_t pos = 0;
+
+  while (lfs_file_tell(&lfs, &log) < lfs_file_size(&lfs, &log)) {
+    for (int i = 0; i < 99; i++) {
+      lfs_file_read(&lfs, &log, (buf + i), 1);
+      if (buf[i] == 10) {
+        buf[99] = 0x00;
+        if (i < 98)
+          buf[i + 1] = 0x00;
+        break;
+      }
+    }
+    pos = lfs_file_tell(&lfs, &log);
+  }
+
+  lfs_file_close(&lfs, &log);
+  lfs_unmount(&lfs);
+}
 /**
  * @brief System Clock Configuration
  * @retval None
  */
+
 void SystemClock_Config(void) {
   LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
   while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_1) {
@@ -64,6 +294,11 @@ void SystemClock_Config(void) {
 
   /* Wait till HSE is ready */
   while (LL_RCC_HSE_IsReady() != 1) {
+  }
+  LL_RCC_LSI_Enable();
+
+  /* Wait till LSI is ready */
+  while (LL_RCC_LSI_IsReady() != 1) {
   }
   LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 
@@ -257,7 +492,7 @@ static void MX_I2C1_Init(void) {
   LL_I2C_DisableGeneralCall(I2C1);
   LL_I2C_EnableClockStretching(I2C1);
   I2C_InitStruct.PeripheralMode = LL_I2C_MODE_I2C;
-  I2C_InitStruct.Timing = 0x0080608D;
+  I2C_InitStruct.Timing = 0x004018D5;
   I2C_InitStruct.AnalogFilter = LL_I2C_ANALOGFILTER_ENABLE;
   I2C_InitStruct.DigitalFilter = 0;
   I2C_InitStruct.OwnAddress1 = 0;
@@ -317,11 +552,11 @@ static void MX_SPI1_Init(void) {
   /* SPI1 parameter configuration*/
   SPI_InitStruct.TransferDirection = LL_SPI_FULL_DUPLEX;
   SPI_InitStruct.Mode = LL_SPI_MODE_MASTER;
-  SPI_InitStruct.DataWidth = LL_SPI_DATAWIDTH_4BIT;
+  SPI_InitStruct.DataWidth = LL_SPI_DATAWIDTH_8BIT;
   SPI_InitStruct.ClockPolarity = LL_SPI_POLARITY_LOW;
   SPI_InitStruct.ClockPhase = LL_SPI_PHASE_1EDGE;
   SPI_InitStruct.NSS = LL_SPI_NSS_SOFT;
-  SPI_InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV2;
+  SPI_InitStruct.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV16;
   SPI_InitStruct.BitOrder = LL_SPI_MSB_FIRST;
   SPI_InitStruct.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   SPI_InitStruct.CRCPoly = 7;
@@ -358,7 +593,7 @@ static void MX_TIM1_Init(void) {
   /* USER CODE END TIM1_Init 1 */
   TIM_InitStruct.Prescaler = 0;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 65535;
+  TIM_InitStruct.Autoreload = 100;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
   TIM_InitStruct.RepetitionCounter = 0;
   LL_TIM_Init(TIM1, &TIM_InitStruct);
@@ -471,6 +706,54 @@ static void MX_GPIO_Init(void) {
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
   /* USER CODE END MX_GPIO_Init_2 */
+}
+
+/**
+ * @brief LPTIM1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_LPTIM1_Init(void) {
+
+  /* USER CODE BEGIN LPTIM1_Init 0 */
+
+  /* USER CODE END LPTIM1_Init 0 */
+
+  LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSI);
+
+  /* Peripheral clock enable */
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
+
+  /* LPTIM1 interrupt Init */
+  NVIC_SetPriority(LPTIM1_IRQn,
+                   NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
+  NVIC_EnableIRQ(LPTIM1_IRQn);
+
+  /* USER CODE BEGIN LPTIM1_Init 1 */
+
+  /* USER CODE END LPTIM1_Init 1 */
+  LL_LPTIM_SetClockSource(LPTIM1, LL_LPTIM_CLK_SOURCE_INTERNAL);
+  LL_LPTIM_SetPrescaler(LPTIM1, LL_LPTIM_PRESCALER_DIV128);
+  LL_LPTIM_SetPolarity(LPTIM1, LL_LPTIM_OUTPUT_POLARITY_REGULAR);
+  LL_LPTIM_SetUpdateMode(LPTIM1, LL_LPTIM_UPDATE_MODE_IMMEDIATE);
+  LL_LPTIM_SetCounterMode(LPTIM1, LL_LPTIM_COUNTER_MODE_INTERNAL);
+  LL_LPTIM_TrigSw(LPTIM1);
+  LL_LPTIM_SetInput1Src(LPTIM1, LL_LPTIM_INPUT1_SRC_GPIO);
+  LL_LPTIM_SetInput2Src(LPTIM1, LL_LPTIM_INPUT2_SRC_GPIO);
+  /* USER CODE BEGIN LPTIM1_Init 2 */
+
+  /* USER CODE END LPTIM1_Init 2 */
+}
+
+void LPTIM1_IRQHandler(void) {
+  flags = flags | LOG_FLAG; // set log flag to signal to main loop to do a log
+
+  LL_TIM_EnableCounter(TIM1);
+  LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
+  LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
+  LL_TIM_EnableAllOutputs(TIM1);
+
+  LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 }
 
 /* USER CODE BEGIN 4 */

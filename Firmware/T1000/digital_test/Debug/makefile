@@ -7,12 +7,24 @@
 
 RM := rm -rf
 
+
+INCLUDES := \
+	-I../Core/Inc \
+	-I../Drivers/STM32L4xx_HAL_Driver/Inc \
+	-I../Drivers/CMSIS/Device/ST/STM32L4xx/Include \
+	-I../Drivers/CMSIS/Include \
+	-I../lib/FRAM_Lib \
+	-I../lib/littlefs
+
+
 # All of the sources participating in the build are defined here
 -include sources.mk
 -include Drivers/STM32L4xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
 -include objects.mk
+-include lib/FRAM_lib/subdir.mk
+-include lib/littlefs/subdir.mk
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(strip $(S_DEPS)),)
