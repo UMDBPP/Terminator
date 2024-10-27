@@ -170,10 +170,10 @@ int main(void) {
       lfs_file_open(&lfs, &log, "flight_log",
                     LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
 
-      sprintf(log_buf, "%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n", log_item.time,
-              log_item.lat_int, log_item.lat_frac, log_item.lat_dir,
-              log_item.lon_int, log_item.lon_frac, log_item.lon_dir,
-              log_item.altitude, log_item.date);
+      sprintf(log_buf, "%lu,%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n", boot_count,
+              log_item.time, log_item.lat_int, log_item.lat_frac,
+              log_item.lat_dir, log_item.lon_int, log_item.lon_frac,
+              log_item.lon_dir, log_item.altitude, log_item.date);
       log_buf[99] = 0x00;
 
       lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
