@@ -6,6 +6,9 @@
 #include "lfs.h"
 #include "stm32_helper.h"
 
+#define PA8_HIGH LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_8);
+#define PA8_LOW LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_8);
+
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
@@ -110,6 +113,7 @@ int main(void) {
   LL_SPI_Enable(SPI1);
 
   LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_0); // Radio NSS high
+  PA8_LOW
 
   fram_init(&memory, SPI1, 0, 0, 0, 0);
 
@@ -152,10 +156,7 @@ int main(void) {
     if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) ||
         (flags & LOG_FLAG)) { // flags & LOG_FLAG // regular logging event
 
-      LL_TIM_EnableCounter(TIM1);
-      LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
-      LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
-      LL_TIM_EnableAllOutputs(TIM1);
+      PA8_HIGH
 
       get_gps_data();
 
@@ -182,7 +183,7 @@ int main(void) {
       lfs_unmount(&lfs);
       flags = flags & ~(LOG_FLAG);
 
-      LL_TIM_DisableCounter(TIM1);
+      PA8_LOW
 
       LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
     }
@@ -676,8 +677,9 @@ static void MX_GPIO_Init(void) {
   /**/
   LL_GPIO_ResetOutputPin(GPIOB, LL_GPIO_PIN_0);
 
-  /**/
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_4;
+  /*Configure GPIO Outputs*/
+  GPIO_InitStruct.Pin =
+      LL_GPIO_PIN_4 || LL_GPIO_PIN_6 || LL_GPIO_PIN_8 || LL_GPIO_PIN_15;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
