@@ -14,7 +14,8 @@ INCLUDES := \
 	-I../Drivers/CMSIS/Device/ST/STM32L4xx/Include \
 	-I../Drivers/CMSIS/Include \
 	-I../lib/FRAM_Lib \
-	-I../lib/littlefs
+	-I../lib/littlefs \
+	-I../lib/ms5607
 
 
 # All of the sources participating in the build are defined here
@@ -25,6 +26,7 @@ INCLUDES := \
 -include objects.mk
 -include lib/FRAM_lib/subdir.mk
 -include lib/littlefs/subdir.mk
+-include lib/ms5607/subdir.mk
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(strip $(S_DEPS)),)

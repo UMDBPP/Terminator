@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "MS5607.h"
 #include "fram.h"
 #include "lfs.h"
 #include "stm32_helper.h"
@@ -19,7 +20,7 @@ static void MX_TIM1_Init(void);
 static void MX_LPTIM1_Init(void);
 
 static uint32_t read_adc1(void);
-void get_gps_data(void);
+int get_gps_data(void);
 void read_log(void);
 
 #define LOG_FLAG 0x01
@@ -42,9 +43,13 @@ struct _log_item {
   uint32_t altitude;
 
   uint32_t date;
+
+  uint32_t pressure;
+  int32_t temperature;
 } log_item;
 
 static char log_buf[100] = {0};
+static unsigned int log_count = 0;
 
 // configuration of the filesystem is provided by this struct
 const struct lfs_config cfg = {
@@ -58,7 +63,7 @@ const struct lfs_config cfg = {
     .read_size = 1,
     .prog_size = 1,
     .block_size = 128,
-    .block_count = 64,
+    .block_count = 1024, // 64
     .cache_size = 1,
     .lookahead_size = 16,
     .block_cycles = -1,
@@ -117,48 +122,59 @@ int main(void) {
 
   fram_init(&memory, SPI1, 0, 0, 0, 0);
 
-  // mount the filesystem
+  read_log();
+
   int err = lfs_mount(&lfs, &cfg);
 
-  // reformat if we can't mount the filesystem
-  // this should only happen on the first boot
   if (err) {
-    exit(-1); // trouble mounting FS
-    // lfs_format(&lfs, &cfg);
-    // lfs_mount(&lfs, &cfg);
+    exit(-1);
+    // err = lfs_format(&lfs, &cfg);
+    // err = lfs_mount(&lfs, &cfg);
   }
 
-  // read current count
+  // update boot count
   uint32_t boot_count = 0;
   lfs_file_open(&lfs, &file, "boot_count", LFS_O_RDWR | LFS_O_CREAT);
   lfs_file_read(&lfs, &file, &boot_count, sizeof(boot_count));
-
-  // update boot count
   boot_count += 1;
   lfs_file_rewind(&lfs, &file);
   lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
-
-  // remember the storage is not updated until the file is closed successfully
   lfs_file_close(&lfs, &file);
 
-  // release any resources we were using
+  // write boot message to flight log
+  lfs_file_open(&lfs, &log, "flight_log",
+                LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
+  sprintf(log_buf, "%lu, Boot\n", boot_count);
+  log_buf[99] = 0x00;
+  lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
+  lfs_file_close(&lfs, &log);
+
   lfs_unmount(&lfs);
 
   err = 0;
 
-  read_log();
-
   log_item.lat_dir = '0';
   log_item.lon_dir = '0';
+
+  // ms5607_reset();
+  ms5607_init(I2C1);
+  ms5607_get_press_temp(&log_item.pressure, &log_item.temperature);
 
   while (1) {
 
     if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) ||
-        (flags & LOG_FLAG)) { // flags & LOG_FLAG // regular logging event
+        (flags & LOG_FLAG)) { // regular logging event
 
       PA8_HIGH
+      log_count++;
 
-      get_gps_data();
+      // -- Pressure Temp Conversion --
+      if (ms5607_get_press_temp(&log_item.pressure, &log_item.temperature) ==
+          -1)
+        sprintf(log_buf, "%lu, press/temp conv fail\n", boot_count);
+      else
+        sprintf(log_buf, "%lu,%lu,%ld\n", boot_count, log_item.pressure,
+                log_item.temperature);
 
       err = lfs_mount(&lfs, &cfg);
 
@@ -171,20 +187,45 @@ int main(void) {
       lfs_file_open(&lfs, &log, "flight_log",
                     LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
 
-      sprintf(log_buf, "%lu,%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n", boot_count,
-              log_item.time, log_item.lat_int, log_item.lat_frac,
-              log_item.lat_dir, log_item.lon_int, log_item.lon_frac,
-              log_item.lon_dir, log_item.altitude, log_item.date);
-      log_buf[99] = 0x00;
+      lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
+
+      lfs_file_close(&lfs, &log);
+      lfs_unmount(&lfs);
+
+      // -- GPS read --
+      if (get_gps_data() < 0) {
+        // GPS parse failed
+        sprintf(log_buf, "%lu, GPS parse failed", boot_count);
+        log_buf[99] = 0x00;
+      } else {
+
+        sprintf(log_buf, "%lu,%u,%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n",
+                boot_count, log_count, log_item.time, log_item.lat_int,
+                log_item.lat_frac, log_item.lat_dir, log_item.lon_int,
+                log_item.lon_frac, log_item.lon_dir, log_item.altitude,
+                log_item.date);
+        log_buf[99] = 0x00;
+      }
+
+      err = lfs_mount(&lfs, &cfg);
+
+      if (err) {
+        exit(-1); // trouble mounting FS
+        // lfs_format(&lfs, &cfg);
+        // lfs_mount(&lfs, &cfg);
+      }
+
+      lfs_file_open(&lfs, &log, "flight_log",
+                    LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
 
       lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
 
       lfs_file_close(&lfs, &log);
       lfs_unmount(&lfs);
+
+      // clean up loop
       flags = flags & ~(LOG_FLAG);
-
       PA8_LOW
-
       LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
     }
   }
@@ -192,19 +233,26 @@ int main(void) {
 
 // this function waits for a NMEA GGA message and parses it into the log item
 // struct above
-void get_gps_data() {
+int get_gps_data() {
 
-  static char buf[100];
+  static char buf[100] = {0};
   static uint32_t len = 100;
   static uint32_t i = 0;
 
   while (1) { // poll I2C bus until end of line is received
 
-    LL_I2C_HandleTransfer(I2C1, (0x42 << 1), LL_I2C_ADDRSLAVE_7BIT, 1,
-                          LL_I2C_MODE_AUTOEND, LL_I2C_GENERATE_START_READ);
+    int timeout = 0; // I2C software timeout counter
 
-    while (LL_I2C_IsActiveFlag_RXNE(I2C1) == 0)
-      ;
+    LL_I2C_HandleTransfer(
+        I2C1, (0x42 << 1), LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_AUTOEND,
+        LL_I2C_GENERATE_START_READ); // request 1 byte from GPS
+
+    while (LL_I2C_IsActiveFlag_RXNE(I2C1) == 0) { // wait for response
+      if (timeout >= 20000) {
+        return -1;
+      }
+      timeout++;
+    }
 
     buf[i] = (char)LL_I2C_ReceiveData8(I2C1);
 
@@ -239,6 +287,8 @@ void get_gps_data() {
     if (buf[i] != 0xFF)
       i++;
   }
+
+  return 0;
 }
 
 // read the log file line by line
@@ -278,6 +328,7 @@ void read_log() {
   lfs_file_close(&lfs, &log);
   lfs_unmount(&lfs);
 }
+
 /**
  * @brief System Clock Configuration
  * @retval None
@@ -679,7 +730,7 @@ static void MX_GPIO_Init(void) {
 
   /*Configure GPIO Outputs*/
   GPIO_InitStruct.Pin =
-      LL_GPIO_PIN_4 || LL_GPIO_PIN_6 || LL_GPIO_PIN_8 || LL_GPIO_PIN_15;
+      (LL_GPIO_PIN_4 | LL_GPIO_PIN_6 | LL_GPIO_PIN_8 | LL_GPIO_PIN_15);
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
@@ -729,7 +780,7 @@ static void MX_LPTIM1_Init(void) {
   /* LPTIM1 interrupt Init */
   NVIC_SetPriority(LPTIM1_IRQn,
                    NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
-  NVIC_EnableIRQ(LPTIM1_IRQn);
+  // NVIC_EnableIRQ(LPTIM1_IRQn);
 
   /* USER CODE BEGIN LPTIM1_Init 1 */
 

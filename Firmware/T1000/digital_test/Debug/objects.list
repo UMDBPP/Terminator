@@ -20,3 +20,4 @@
 "./lib/FRAM_lib/fs_util.o"
 "./lib/littlefs/lfs.o"
 "./lib/littlefs/lfs_util.o"
+"./lib/ms5607/MS5607.o"

@@ -13,78 +13,31 @@ static uint32_t init_flag = 0;
 // relies on an external FRAM memory device declared elsewhere (like in main.c)
 extern fram_t memory;
 
-// used to set pointer
+// or you can set the device
 void disk_set_fram(fram_t dev) { memory = dev; }
 
-// FatFS port functions - not used!
-/*
-DSTATUS disk_status(BYTE pdrv) {
-  DSTATUS status = init_flag;
+// Mounts, opens file, write to file, closes file, unmounts, returns -1 if mount
+// fails
+int write_buf_to_fs(lfs_t *lfs, const struct lfs_config *config,
+                    lfs_file_t *file, const char *path, char *buf,
+                    uint32_t bytes) {
 
-  return status;
-}
+  int err = lfs_mount(lfs, config);
 
-DSTATUS disk_initialize(BYTE pdrv) {
-
-  if (memory == NULL)
-    return RES_ERROR;
-
-  return RES_OK;
-}
-
-DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
-  if (!(disk_status(pdrv) && 0x01))
-    return RES_NOTRDY;
-
-  if (FF_MIN_SS == FF_MAX_SS) {
-    fram_read(memory, memory->spi_device, (sector * FF_MIN_SS), (uint8_t *)buff,
-              (count * FF_MIN_SS));
-  } else {
-    printf("Min/Max sector size not equal");
-    return RES_PARERR;
+  if (err) {
+    return -1;
   }
 
-  return RES_OK;
+  lfs_file_open(lfs, file, path, LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
+
+  lfs_file_write(lfs, file, buf, bytes);
+
+  lfs_file_close(lfs, file);
+  lfs_unmount(lfs);
+
+  return 0;
 }
 
-DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
-  if (!(disk_status(pdrv) && 0x01))
-    return RES_NOTRDY;
-
-  if (FF_MIN_SS == FF_MAX_SS) {
-    fram_write(memory, memory->spi_device, (sector * FF_MIN_SS),
-               (uint8_t *)buff, (count * FF_MIN_SS));
-  } else {
-    printf("Min/Max sector size not equal");
-    return RES_PARERR;
-  }
-
-  return RES_OK;
-}
-DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
-  if (cmd == CTRL_SYNC) {
-    return RES_OK;
-  } else if (cmd == GET_SECTOR_COUNT) {
-    *((LBA_t *)buff) = 16;
-    return RES_OK;
-  } else if (cmd == GET_BLOCK_SIZE) {
-    *((DWORD *)buff) = 1;
-    return RES_OK;
-  } else {
-    // nothing to do here since the SPI writes are blocking
-    return RES_ERROR;
-  }
-}
-
-DWORD get_fattime(void) {
-  const DWORD timestamp =
-      0x2E290000; // forgive the magic number, since there's no reliable time
-                  // keeping every file will just get this time stamp which
-                  // is January 9th, 2003
-
-  return timestamp;
-}
-*/
 // littleFS port functions
 
 int fs_flash_read(const struct lfs_config *cfg, lfs_block_t block,

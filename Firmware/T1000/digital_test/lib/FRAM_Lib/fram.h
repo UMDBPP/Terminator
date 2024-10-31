@@ -56,4 +56,6 @@ int fs_flash_erase(const struct lfs_config *cfg, lfs_block_t block);
 
 int fs_flash_sync(const struct lfs_config *c);
 
+int write_buf_to_fs(lfs_t *lfs, const struct lfs_config *config, lfs_file_t *file, const char *path, char *buf, uint32_t bytes);
+
 #endif  // FRAM_lib
