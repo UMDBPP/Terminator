@@ -71,7 +71,7 @@ static int i2c_write_blocking(I2C_TypeDef *i2cx, uint8_t addr, uint8_t *buf,
   for (int i = 0; i < bytes; i++) {
 
     while (LL_I2C_IsActiveFlag_TXE(I2C1) == 0) {
-      if (timeout >= 20000) {
+      if (timeout >= 2000000) {
         return -1;
       }
       timeout++;
@@ -247,8 +247,7 @@ static int conversion() {
 
   i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false);
 
-  for (int i = 0; i < 500000; i++)
-    ;
+  LL_mDelay(10);
 
   cmd = MS5607_READ_CMD;
 
@@ -266,8 +265,7 @@ static int conversion() {
 
   i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false);
 
-  for (int i = 0; i < 500000; i++)
-    ;
+  LL_mDelay(10);
 
   cmd = MS5607_READ_CMD;
 

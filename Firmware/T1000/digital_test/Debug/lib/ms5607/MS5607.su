@@ -9,4 +9,4 @@
 ../lib/ms5607/MS5607.c:93:5:ms5607_reset	24	static
 ../lib/ms5607/MS5607.c:103:5:ms5607_get_press_temp	272	static
 ../lib/ms5607/MS5607.c:161:12:read_prom	48	static
-../lib/ms5607/MS5607.c:244:12:conversion	32	static
+../lib/ms5607/MS5607.c:244:12:conversion	24	static

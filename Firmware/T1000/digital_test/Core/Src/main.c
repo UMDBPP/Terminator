@@ -22,8 +22,13 @@ static void MX_LPTIM1_Init(void);
 static uint32_t read_adc1(void);
 int get_gps_data(void);
 void read_log(void);
+static int count_revifs(uint32_t n);
 
 #define LOG_FLAG 0x01
+#define CUT_FLAG 0x02
+
+uint32_t int_count_30 = 0; // 30 second interval counter as counted by LPTIM1
+uint32_t cut_counter = 0;  // counts number of cut attempts
 
 static uint32_t flags = 0;
 
@@ -32,11 +37,11 @@ fram_t memory;
 struct _log_item {
   uint32_t time;
 
-  uint32_t lat_int;
+  int32_t lat_int;
   uint32_t lat_frac;
   char lat_dir;
 
-  uint32_t lon_int;
+  int32_t lon_int;
   uint32_t lon_frac;
   char lon_dir;
 
@@ -46,10 +51,11 @@ struct _log_item {
 
   uint32_t pressure;
   int32_t temperature;
+
+  uint32_t log_count;
 } log_item;
 
 static char log_buf[100] = {0};
-static unsigned int log_count = 0;
 
 // configuration of the filesystem is provided by this struct
 const struct lfs_config cfg = {
@@ -73,6 +79,7 @@ const struct lfs_config cfg = {
 lfs_t lfs;
 lfs_file_t file;
 lfs_file_t log;
+lfs_file_t int_count_save;
 
 /**
  * @brief  The application entry point.
@@ -92,9 +99,11 @@ int main(void) {
 
   SystemClock_Config();
 
+  // USB_Init(); // needs testing
+
   MX_GPIO_Init();
-  MX_ADC1_Init();
-  MX_COMP1_Init();
+  // MX_ADC1_Init();
+  // MX_COMP1_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
@@ -103,17 +112,17 @@ int main(void) {
   // Enable PWM channel outputs
   // LL_TIM_EnableCounter(TIM1);
   // LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
-  // LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
+  // LL_TIM_OC_SetCompareCH3(TIM1, 25); // change this
   // LL_TIM_EnableAllOutputs(TIM1);
 
-  // enable LPTIM1 which triggers interrupt every ~30 seconds
+  // enable LPTIM1 which triggers interrupt every 30 seconds
   LL_LPTIM_Enable(LPTIM1);
   LL_LPTIM_EnableIT_ARRM(LPTIM1);
-  LL_LPTIM_SetAutoReload(LPTIM1, 8533);
+  LL_LPTIM_SetAutoReload(LPTIM1, 7680); // 8533
   LL_LPTIM_StartCounter(LPTIM1, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
 
   // Enable Peripherals
-  LL_ADC_Enable(ADC1);
+  // LL_ADC_Enable(ADC1);
   LL_I2C_Enable(I2C1);
   LL_SPI_Enable(SPI1);
 
@@ -141,6 +150,12 @@ int main(void) {
   lfs_file_write(&lfs, &file, &boot_count, sizeof(boot_count));
   lfs_file_close(&lfs, &file);
 
+  // update 30 seond interval count
+  lfs_file_open(&lfs, &int_count_save, "int_count_30",
+                LFS_O_RDWR | LFS_O_CREAT);
+  // lfs_file_read(&lfs, &int_count_save, &int_count_30, sizeof(int_count_30));
+  lfs_file_close(&lfs, &int_count_save);
+
   // write boot message to flight log
   lfs_file_open(&lfs, &log, "flight_log",
                 LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
@@ -163,10 +178,19 @@ int main(void) {
   while (1) {
 
     if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) ||
-        (flags & LOG_FLAG)) { // regular logging event
+        (flags & LOG_FLAG)) { // regular 30 second routine
 
       PA8_HIGH
-      log_count++;
+      log_item.log_count++;
+      int_count_30++;
+
+      // update 30 seond interval count
+      lfs_file_open(&lfs, &int_count_save, "int_count_30",
+                    LFS_O_RDWR | LFS_O_CREAT);
+      lfs_file_rewind(&lfs, &int_count_save);
+      lfs_file_write(&lfs, &int_count_save, &int_count_30,
+                     sizeof(int_count_30));
+      lfs_file_close(&lfs, &int_count_save);
 
       // -- Pressure Temp Conversion --
       if (ms5607_get_press_temp(&log_item.pressure, &log_item.temperature) ==
@@ -195,12 +219,12 @@ int main(void) {
       // -- GPS read --
       if (get_gps_data() < 0) {
         // GPS parse failed
-        sprintf(log_buf, "%lu, GPS parse failed", boot_count);
+        sprintf(log_buf, "%lu, GPS parse failed\n", boot_count);
         log_buf[99] = 0x00;
       } else {
 
-        sprintf(log_buf, "%lu,%u,%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n",
-                boot_count, log_count, log_item.time, log_item.lat_int,
+        sprintf(log_buf, "%lu,%lu,%lu,%lu.%lu,%c,%lu.%lu,%c,%lu,%lu \n",
+                boot_count, log_item.log_count, log_item.time, log_item.lat_int,
                 log_item.lat_frac, log_item.lat_dir, log_item.lon_int,
                 log_item.lon_frac, log_item.lon_dir, log_item.altitude,
                 log_item.date);
@@ -222,6 +246,39 @@ int main(void) {
 
       lfs_file_close(&lfs, &log);
       lfs_unmount(&lfs);
+
+      // -- Cut Attempt --
+      if ((int_count_30 >= (30 * 2)) && (cut_counter < 4)) {
+        if (flags & CUT_FLAG) { // currently cutting
+          LL_TIM_DisableCounter(TIM1);
+
+          sprintf(log_buf, "%lu, end cut %lu at %lu\n", boot_count, cut_counter,
+                  log_item.time);
+
+          write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf,
+                          strlen(log_buf));
+          cut_counter++;
+
+          flags = flags & ~(CUT_FLAG);
+
+        } else { // not currently cutting
+
+          // Enable PWM channel outputs
+          LL_TIM_EnableCounter(TIM1);
+          LL_TIM_CC_EnableChannel(TIM1,
+                                  LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
+          LL_TIM_OC_SetCompareCH3(TIM1, 25); // change this
+          LL_TIM_EnableAllOutputs(TIM1);
+
+          sprintf(log_buf, "%lu, start cut %lu at %lu\n", boot_count,
+                  cut_counter, log_item.time);
+
+          write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf,
+                          strlen(log_buf));
+
+          flags = flags | CUT_FLAG;
+        }
+      }
 
       // clean up loop
       flags = flags & ~(LOG_FLAG);
@@ -267,20 +324,38 @@ int get_gps_data() {
 
       if (strncmp((buf + 3), "GGA", 3) == 0) { // parse GGA message
 
-        sscanf(buf, "%*[^,],%lu.%*lu,%lu.%lu,%c,%lu.%lu,%c,%*d,%*d,%*d,%lu",
+        sscanf(buf, "%*[^,],%lu.%*lu,%ld.%lu,%c,%lu.%lu,%c,%*d,%*d,%*d,%lu",
                &(log_item.time), &(log_item.lat_int), &(log_item.lat_frac),
                &(log_item.lat_dir), &(log_item.lon_int), &(log_item.lon_frac),
                &(log_item.lon_dir), &(log_item.altitude));
+
+        // move the decimal point left 2 for coords
+        log_item.lat_frac =
+            ((log_item.lat_int % 100) * count_revifs(log_item.lat_frac)) +
+            log_item.lat_frac;
+        log_item.lat_int = log_item.lat_int - (log_item.lat_int % 100);
+
+        log_item.lon_frac =
+            ((log_item.lon_int % 100) * count_revifs(log_item.lon_frac)) +
+            log_item.lon_frac;
+        log_item.lon_int = log_item.lon_int - (log_item.lon_int % 100);
+
+        if (log_item.lat_dir == 'W')
+          log_item.lat_int = log_item.lat_int * -1;
+
+        if (log_item.lon_dir == 'S')
+          log_item.lon_int = log_item.lon_int * -1;
+
         break;
       }
 
       if (strncmp((buf + 3), "RMC", 3) == 0) { // parse RMC message
 
         sscanf(buf,
-               "%*[^,],%lu,%*c,%lu.%lu,%c,%lu.%lu,%c,%*lu.%*lu,%*lu.%*lu,%lu",
+               "%*[^,],%lu,%*c,%ld.%lu,%c,%lu.%lu,%c,%*lu.%*lu,%*lu.%*lu,%lu",
                &(log_item.time), &(log_item.lat_int), &(log_item.lat_frac),
                &(log_item.lat_dir), &(log_item.lon_int), &(log_item.lon_frac),
-               &(log_item.lon_dir), &(log_item.altitude), &(log_item.date));
+               &(log_item.lon_dir), &(log_item.date));
       }
     }
 
@@ -347,11 +422,40 @@ void SystemClock_Config(void) {
   /* Wait till HSE is ready */
   while (LL_RCC_HSE_IsReady() != 1) {
   }
+
+  LL_RCC_MSI_Enable();
+
+  /* Wait till MSI is ready */
+  while (LL_RCC_MSI_IsReady() != 1) {
+  }
+  LL_RCC_MSI_EnableRangeSelection();
+  LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_6);
+  LL_RCC_MSI_SetCalibTrimming(0);
+  LL_PWR_EnableBkUpAccess();
+
   LL_RCC_LSI_Enable();
 
   /* Wait till LSI is ready */
   while (LL_RCC_LSI_IsReady() != 1) {
   }
+
+  LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
+  LL_RCC_LSE_Enable();
+
+  /* Wait till LSE is ready */
+  while (LL_RCC_LSE_IsReady() != 1) {
+  }
+
+  LL_RCC_MSI_EnablePLLMode();
+  LL_RCC_PLL_ConfigDomain_48M(LL_RCC_PLLSOURCE_MSI, LL_RCC_PLLM_DIV_1, 24,
+                              LL_RCC_PLLQ_DIV_2);
+  LL_RCC_PLL_EnableDomain_48M();
+  LL_RCC_PLL_Enable();
+
+  /* Wait till PLL is ready */
+  while (LL_RCC_PLL_IsReady() != 1) {
+  }
+
   LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
 
   /* Wait till System clock is ready */
@@ -365,7 +469,6 @@ void SystemClock_Config(void) {
 
   LL_SetSystemCoreClock(25000000);
 }
-
 /**
  * @brief ADC1 Initialization Function
  * @param None
@@ -772,7 +875,7 @@ static void MX_LPTIM1_Init(void) {
 
   /* USER CODE END LPTIM1_Init 0 */
 
-  LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSI);
+  LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSE);
 
   /* Peripheral clock enable */
   LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
@@ -801,10 +904,10 @@ static void MX_LPTIM1_Init(void) {
 void LPTIM1_IRQHandler(void) {
   flags = flags | LOG_FLAG; // set log flag to signal to main loop to do a log
 
-  LL_TIM_EnableCounter(TIM1);
-  LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
-  LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
-  LL_TIM_EnableAllOutputs(TIM1);
+  // LL_TIM_EnableCounter(TIM1);
+  // LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
+  // LL_TIM_OC_SetCompareCH3(TIM1, 50); // change this
+  //  LL_TIM_EnableAllOutputs(TIM1);
 
   LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 }
@@ -866,4 +969,44 @@ static uint32_t read_adc1(void) {
       __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adcValCh1, LL_ADC_RESOLUTION_12B);
 
   return realValue;
+}
+
+void USB_Init() {
+  // Initialize the NVIC
+  NVIC_SetPriority(USB_IRQn, 8);
+  NVIC_EnableIRQ(USB_IRQn);
+
+  // Enable USB macrocell
+  USB->CNTR &= ~USB_CNTR_PDWN;
+
+  // Wait 1μs until clock is stable
+  SysTick->LOAD = 100;
+  SysTick->VAL = 0;
+  SysTick->CTRL = 1;
+  while ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) == 0) {
+  }
+  SysTick->CTRL = 0;
+
+  // Enable all interrupts & the internal pullup to put 1.5K on D+ for FullSpeed
+  // USB
+  USB->CNTR |= USB_CNTR_RESETM | USB_CNTR_CTRM;
+  USB->BCDR |= USB_BCDR_DPPU;
+
+  // Clear the USB Reset (D+ & D- low) to start enumeration
+  USB->CNTR &= ~USB_CNTR_FRES;
+}
+
+void USB_IRQHandler() {}
+
+// counts number of digits in uint32_t, returns anywhere from 1-5
+static int count_revifs(uint32_t n) {
+  if (n > 9999)
+    return 5;
+  if (n > 999)
+    return 4;
+  if (n > 99)
+    return 3;
+  if (n > 9)
+    return 2;
+  return 1;
 }
