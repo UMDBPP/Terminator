@@ -101,7 +101,6 @@ int ms5607_reset() {
 }
 
 int ms5607_get_press_temp(uint32_t *pressure, int32_t *temperature) {
-  // TODO
 
   int32_t press = 0;
   int32_t temp = 0;
@@ -159,100 +158,65 @@ int ms5607_get_press_temp(uint32_t *pressure, int32_t *temperature) {
 }
 
 static int read_prom() {
-  uint8_t cmd = MS5607_READ_C1_CMD;
   uint8_t buf[2] = {0, 0};
 
+  uint8_t cmd = MS5607_READ_C1_CMD;
   if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
     return -1;
-
-  for (int i = 0; i < 200000; i++)
-    ;
-
   if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
     return -1;
-
   c1 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C2_CMD;
-
   if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
     return -1;
-
-  for (int i = 0; i < 200000; i++)
-    ;
-
   if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
     return -1;
-
   c2 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C3_CMD;
-
   if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
     return -1;
-
-  for (int i = 0; i < 200000; i++)
-    ;
-
   if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
     return -1;
-
   c3 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C4_CMD;
-
   if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
     return -1;
-
-  for (int i = 0; i < 200000; i++)
-    ;
-
   if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
     return -1;
-
   c4 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C5_CMD;
-
   if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
     return -1;
-
-  for (int i = 0; i < 200000; i++)
-    ;
-
   if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
     return -1;
-
   c5 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C6_CMD;
-
   if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
     return -1;
-
-  for (int i = 0; i < 200000; i++)
-    ;
-
   if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
     return -1;
-
   c6 = ((uint16_t)buf[0] << 8) | buf[1];
 
   return 0;
 }
 
 static int conversion() {
-  uint8_t cmd = MS5607_PRESS_CONV_CMD;
   uint8_t buf[3] = {0, 0, 0};
 
-  i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false);
-
+  uint8_t cmd = MS5607_PRESS_CONV_CMD;
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+    return -1;
   LL_mDelay(10);
 
   cmd = MS5607_READ_CMD;
-
-  i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, &buf[0], 3, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+    return -1;
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 3, false) == -1)
     return -1;
 
   d1 = ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2];
@@ -262,15 +226,15 @@ static int conversion() {
   buf[2] = 0;
 
   cmd = MS5607_TEMP_CONV_CMD;
-
-  i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false);
-
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+    return -1;
   LL_mDelay(10);
 
   cmd = MS5607_READ_CMD;
-
-  i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false);
-  i2c_read_blocking(i2c, MS5607_ADDR, &buf[0], 3, false);
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+    return -1;
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 3, false) == -1)
+    return -1;
 
   d2 = ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2];
 

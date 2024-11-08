@@ -16,7 +16,8 @@ C_SRCS += \
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.c \
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.c \
 ../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.c \
-../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.c
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.c \
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.c
 
 OBJS += \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_adc.o \
@@ -30,7 +31,9 @@ OBJS += \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.o \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.o \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.o \
-./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.o
+./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.o \
+./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.o
+
 
 C_DEPS += \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_adc.d \
@@ -44,7 +47,9 @@ C_DEPS += \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.d \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.d \
 ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.d \
-./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.d
+./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.d \
+./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.d
+
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -56,7 +61,8 @@ clean: clean-Drivers-2f-STM32L4xx_HAL_Driver-2f-Src
 clean-Drivers-2f-STM32L4xx_HAL_Driver-2f-Src:
 	-$(RM) ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_adc.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_adc.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_adc.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_adc.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_dma.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_exti.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_gpio.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_i2c.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_i2c.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_i2c.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_i2c.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_pwr.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_pwr.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_pwr.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_pwr.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_rcc.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_rcc.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_rcc.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_rcc.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_spi.su ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_tim.su \
 		./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_utils.su \
-		./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.su
+		./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_lptim.su \
+		./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.cyclo ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.d ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.o ./Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_usart.su
 
 .PHONY: clean-Drivers-2f-STM32L4xx_HAL_Driver-2f-Src
 
