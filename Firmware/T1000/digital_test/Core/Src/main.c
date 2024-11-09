@@ -20,8 +20,9 @@ static int count_revifs(uint32_t n);
 #define CUT_FLAG (0x01 << 1)
 #define GEO_FLAG (0x01 << 2)
 
-uint32_t int_count_30 = 0; // 30 second interval counter as counted by LPTIM1
-uint32_t cut_counter = 0;  // counts number of cut attempts
+uint32_t int_count_30 = 0;   // 30 second interval counter as counted by LPTIM1
+uint32_t cut_counter = 0;    // counts number of cut attempts
+uint32_t cut_int_timer = 45; // number of minutes until cut
 
 static uint32_t flags = 0;
 
@@ -108,9 +109,9 @@ lfs_file_t int_count_save;
 #define PID_TAU 20
 
 #define PID_LIM_MIN 0
-#define PID_LIM_MAX 90
+#define PID_LIM_MAX 50
 
-#define PID_LIM_MIN_INT -100
+#define PID_LIM_MIN_INT ((int32_t)(-100))
 #define PID_LIM_MAX_INT 100
 
 /**
@@ -145,6 +146,8 @@ int main(void) {
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_LPTIM1_Init();
+  MX_USART2_UART_Init();
+  MX_IWDG_Init();
 
   // enable LPTIM1 which triggers interrupt every 30 seconds
   LL_LPTIM_Enable(LPTIM1);
@@ -196,6 +199,8 @@ int main(void) {
 
   lfs_unmount(&lfs);
 
+  LL_IWDG_ReloadCounter(IWDG);
+
   err = 0;
 
   log_item.lat_dir = '0';
@@ -215,15 +220,19 @@ int main(void) {
   // PID Init
   PIDController pid = {PID_KP,          PID_KI,          PID_KD,
                        PID_TAU,         PID_LIM_MIN,     PID_LIM_MAX,
-                       PID_LIM_MIN_INT, PID_LIM_MAX_INT, 0};
+                       PID_LIM_MIN_INT, PID_LIM_MAX_INT, 1};
 
   PIDController_Init(&pid);
 
   while (1) {
 
     // tight PI loop
-    while ((flags | CUT_FLAG) &&
+    while ((flags & CUT_FLAG) &&
            !(LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) || (flags & LOG_FLAG))) {
+
+      LL_IWDG_ReloadCounter(IWDG);
+
+      LL_ADC_REG_StartConversion(ADC1);
 
       // wait end of conversion flag
       while (!LL_ADC_IsActiveFlag_EOC(ADC1))
@@ -238,7 +247,7 @@ int main(void) {
       realValue =
           __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adcValCh1, LL_ADC_RESOLUTION_12B);
 
-      PIDController_Update(&pid, 500, realValue);
+      PIDController_Update(&pid, 1000, realValue);
       LL_TIM_OC_SetCompareCH3(TIM1, pid.out);
     }
 
@@ -250,7 +259,7 @@ int main(void) {
       int_count_30++;
 
       // -- Cut Attempt --
-      if ((int_count_30 >= (1 * 2)) && (cut_counter < 4)) {
+      if ((int_count_30 >= (cut_int_timer * 2)) && (cut_counter < 4)) {
         if (flags & CUT_FLAG) { // currently cutting, need to disable quickly
 
           LL_TIM_OC_SetCompareCH3(TIM1, 0);
@@ -269,8 +278,8 @@ int main(void) {
 
         } else { // not currently cutting
 
-          LL_ADC_REG_SetContinuousMode(ADC1, LL_ADC_REG_CONV_CONTINUOUS);
-          LL_ADC_REG_StartConversion(ADC1);
+          // LL_ADC_REG_SetContinuousMode(ADC1, LL_ADC_REG_CONV_CONTINUOUS);
+          // LL_ADC_REG_StartConversion(ADC1);
 
           // Enable PWM channel outputs
           LL_TIM_EnableCounter(TIM1);
@@ -357,6 +366,8 @@ int main(void) {
       PA8_LOW
       LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
     }
+
+    LL_IWDG_ReloadCounter(IWDG);
   }
 }
 
@@ -370,6 +381,7 @@ int get_gps_data() {
 
   // USART2 Support on GPIO headers
   LL_USART_EnableDirectionRx(USART2);
+  LL_USART_DisableDirectionTx(USART2);
 
   while (1) { // poll I2C bus until end of line is received
 
@@ -484,6 +496,7 @@ void read_log() {
       }
     }
     pos = lfs_file_tell(&lfs, &log);
+    LL_IWDG_ReloadCounter(IWDG);
   }
 
   lfs_file_close(&lfs, &log);
