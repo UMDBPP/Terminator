@@ -16,6 +16,8 @@
 #include "stm32l4xx_ll_gpio.h"
 #include "stm32l4xx_ll_lptim.h"
 #include "stm32l4xx_ll_usart.h"
+#include "stm32l4xx_ll_iwdg.h"
+
 
 void spi_read(SPI_TypeDef *spix, uint8_t *const buf, uint32_t num_bytes);
 
@@ -38,4 +40,4 @@ void MX_SPI1_Init(void);
 void MX_TIM1_Init(void);
 void MX_LPTIM1_Init(void);
 void MX_USART2_UART_Init(void);
-
+void MX_IWDG_Init(void);

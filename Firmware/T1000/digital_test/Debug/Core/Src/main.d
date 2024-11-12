@@ -24,6 +24,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_lptim.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usart.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h \
  ../lib/ms5607/MS5607.h ../lib/PID/PID.h ../lib/FRAM_Lib/fram.h \
  ../lib/littlefs/lfs.h ../lib/littlefs/lfs_util.h \
  ../Core/Inc/stm32_helper.h
@@ -53,6 +54,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_lptim.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usart.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:
 ../lib/ms5607/MS5607.h:
 ../lib/PID/PID.h:
 ../lib/FRAM_Lib/fram.h:

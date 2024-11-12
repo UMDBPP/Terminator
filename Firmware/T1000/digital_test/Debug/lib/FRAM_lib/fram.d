@@ -26,6 +26,7 @@ lib/FRAM_lib/fram.o: ../lib/FRAM_lib/fram.c ../lib/FRAM_lib/fram.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_lptim.h \
  ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usart.h \
+ ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h \
  ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l422xx.h
 ../lib/FRAM_lib/fram.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_spi.h:
@@ -56,4 +57,5 @@ lib/FRAM_lib/fram.o: ../lib/FRAM_lib/fram.c ../lib/FRAM_lib/fram.h \
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_gpio.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_lptim.h:
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usart.h:
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:
 ../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l422xx.h:

@@ -85,6 +85,12 @@
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_lptim.h:929:22:LL_LPTIM_SetClockSource	16	static
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usart.h:693:22:LL_USART_Enable	16	static
 ../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_usart.h:2810:22:LL_USART_ConfigAsyncMode	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:141:22:LL_IWDG_Enable	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:152:22:LL_IWDG_ReloadCounter	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:163:22:LL_IWDG_EnableWriteAccess	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:193:22:LL_IWDG_SetPrescaler	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:223:22:LL_IWDG_SetReloadCounter	16	static
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_iwdg.h:311:26:LL_IWDG_IsReady	16	static
 ../Core/Src/stm32_helper.c:5:6:spi_read	40	static
 ../Core/Src/stm32_helper.c:11:6:spi_write	32	static
 ../Core/Src/stm32_helper.c:19:9:SPI_TxRx	16	static
@@ -101,3 +107,4 @@
 ../Core/Src/stm32_helper.c:585:6:MX_GPIO_Init	32	static
 ../Core/Src/stm32_helper.c:639:6:MX_LPTIM1_Init	8	static
 ../Core/Src/stm32_helper.c:676:6:MX_USART2_UART_Init	64	static
+../Core/Src/stm32_helper.c:737:6:MX_IWDG_Init	8	static

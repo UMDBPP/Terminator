@@ -15,18 +15,29 @@ static uint32_t read_adc1(void);
 int get_gps_data(void);
 void read_log(void);
 static int count_revifs(uint32_t n);
+void dump_fram(void);
 
 #define LOG_FLAG (0x01 << 0)
 #define CUT_FLAG (0x01 << 1)
 #define GEO_FLAG (0x01 << 2)
 
+#define INT_TIM_EN_FLAG                                                        \
+  (0x01 << 3) // if this flag is set, T1xxx will attempt to terminate after
+              // 2*cut_int_timer minutes
+
+#define GEO_EN_FLAG                                                            \
+  (0x01 << 4) // if this flag is set, T1xxx will attempt to terminate when it
+              // detects exit from the set geofence
+
+// Termination Logic parameters
 uint32_t int_count_30 = 0;   // 30 second interval counter as counted by LPTIM1
 uint32_t cut_counter = 0;    // counts number of cut attempts
 uint32_t cut_int_timer = 45; // number of minutes until cut
 
-static uint32_t flags = 0;
+static uint32_t flags =
+    INT_TIM_EN_FLAG | GEO_EN_FLAG; // flags used for a variety of purposes
 
-fram_t memory;
+fram_t memory; // off chip memory used to store non-volatile flight logs
 
 struct _log_item {
   uint32_t time;
@@ -122,8 +133,8 @@ int main(void) {
 
   int err = 0;
   uint32_t boot_count = 0;
-  uint16_t adcValCh1 = 0;
-  uint32_t realValue = 0;
+  uint16_t adc_value = 0;
+  uint32_t real_value = 0;
 
   LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
   LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
@@ -140,8 +151,8 @@ int main(void) {
   // USB_Init(); // needs testing
 
   MX_GPIO_Init();
-  MX_ADC1_Init();
-  // MX_COMP1_Init();
+  // MX_ADC1_Init();
+  //  MX_COMP1_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
@@ -152,11 +163,11 @@ int main(void) {
   // enable LPTIM1 which triggers interrupt every 30 seconds
   LL_LPTIM_Enable(LPTIM1);
   LL_LPTIM_EnableIT_ARRM(LPTIM1);
-  LL_LPTIM_SetAutoReload(LPTIM1, 7680); // 8533
+  LL_LPTIM_SetAutoReload(LPTIM1, 7680);
   LL_LPTIM_StartCounter(LPTIM1, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
 
   // Enable Peripherals
-  LL_ADC_Enable(ADC1);
+  // LL_ADC_Enable(ADC1);
   LL_I2C_Enable(I2C1);
   LL_SPI_Enable(SPI1);
 
@@ -165,7 +176,7 @@ int main(void) {
 
   fram_init(&memory, SPI1, 0, 0, 0, 0);
 
-  read_log();
+  // dump_fram();
 
   err = lfs_mount(&lfs, &cfg);
 
@@ -192,14 +203,22 @@ int main(void) {
   // write boot message to flight log
   lfs_file_open(&lfs, &log, "flight_log",
                 LFS_O_RDWR | LFS_O_CREAT | LFS_O_APPEND);
-  sprintf(log_buf, "%lu, Boot\n", boot_count);
+  sprintf(log_buf, "%lu, boot\n", boot_count);
   log_buf[99] = 0x00;
   lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
   lfs_file_close(&lfs, &log);
 
   lfs_unmount(&lfs);
 
+  read_log(); // dump log over USART2 on PA2
+
   LL_IWDG_ReloadCounter(IWDG);
+
+  sprintf(log_buf, "%lu, flags: %lx\n", boot_count, flags);
+  write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf, strlen(log_buf));
+
+  MX_ADC1_Init();
+  LL_ADC_Enable(ADC1);
 
   err = 0;
 
@@ -241,13 +260,23 @@ int main(void) {
       // clear flag
       LL_ADC_ClearFlag_EOC(ADC1);
 
-      // read channel1 data
-      adcValCh1 = LL_ADC_REG_ReadConversionData12(ADC1);
+      // read channel1 data in mV
+      adc_value = LL_ADC_REG_ReadConversionData12(ADC1);
 
-      realValue =
-          __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adcValCh1, LL_ADC_RESOLUTION_12B);
+      if (log_item.pressure <
+          100000) // total kludge since it's difficult to figure out if on
+                  // battery or USB power right now, if pressure is less than
+                  // 1000 mbar it's pretty likely that system is airborne
+        real_value = __LL_ADC_CALC_DATA_TO_VOLTAGE(3000, adc_value,
+                                                   LL_ADC_RESOLUTION_12B);
+      else
 
-      PIDController_Update(&pid, 1000, realValue);
+        real_value = __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adc_value,
+                                                   LL_ADC_RESOLUTION_12B);
+
+      PIDController_Update(
+          &pid, 1000,
+          real_value); // update PID controller with set point 1000mV
       LL_TIM_OC_SetCompareCH3(TIM1, pid.out);
     }
 
@@ -258,38 +287,31 @@ int main(void) {
       log_item.log_count++;
       int_count_30++;
 
-      // -- Cut Attempt --
-      if ((int_count_30 >= (cut_int_timer * 2)) && (cut_counter < 4)) {
-        if (flags & CUT_FLAG) { // currently cutting, need to disable quickly
+      // -- Termination Logic --
+      if (flags & CUT_FLAG) { // currently cutting, need to disable quickly
 
-          LL_TIM_OC_SetCompareCH3(TIM1, 0);
-          LL_TIM_DisableCounter(TIM1);
+        LL_TIM_OC_SetCompareCH3(TIM1, 0);
+        LL_TIM_DisableCounter(TIM1);
 
-          LL_ADC_REG_SetContinuousMode(ADC1, LL_ADC_REG_CONV_SINGLE);
+        LL_ADC_REG_SetContinuousMode(ADC1, LL_ADC_REG_CONV_SINGLE);
 
-          sprintf(log_buf, "%lu, end cut %lu at %lu\n", boot_count, cut_counter,
-                  log_item.time);
+        sprintf(log_buf, "%lu, %lu, end cut %lu at %lu\n", boot_count,
+                log_item.log_count, cut_counter, log_item.time);
 
-          write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf,
-                          strlen(log_buf));
-          cut_counter++;
+        write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf,
+                        strlen(log_buf));
+        cut_counter++;
 
-          flags = flags & ~(CUT_FLAG);
+        flags = flags & ~(CUT_FLAG);
+      }
 
-        } else { // not currently cutting
+      if (cut_counter < 4) { // limit total number of cut attempts
 
-          // LL_ADC_REG_SetContinuousMode(ADC1, LL_ADC_REG_CONV_CONTINUOUS);
-          // LL_ADC_REG_StartConversion(ADC1);
+        if ((int_count_30 >= (cut_int_timer * 2)) &&
+            (flags & INT_TIM_EN_FLAG)) { // timer trigger
 
-          // Enable PWM channel outputs
-          LL_TIM_EnableCounter(TIM1);
-          LL_TIM_CC_EnableChannel(TIM1,
-                                  LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
-          LL_TIM_OC_SetCompareCH3(TIM1, 0);
-          LL_TIM_EnableAllOutputs(TIM1);
-
-          sprintf(log_buf, "%lu, start cut %lu at %lu\n", boot_count,
-                  cut_counter, log_item.time);
+          sprintf(log_buf, "%lu, %lu, cut trig: interval counter %lu at %lu\n",
+                  boot_count, log_item.log_count, cut_counter, log_item.time);
 
           write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf,
                           strlen(log_buf));
@@ -298,22 +320,31 @@ int main(void) {
         }
       }
 
-      // update 30 seond interval count
-      lfs_file_open(&lfs, &int_count_save, "int_count_30",
-                    LFS_O_RDWR | LFS_O_CREAT);
-      lfs_file_rewind(&lfs, &int_count_save);
-      lfs_file_write(&lfs, &int_count_save, &int_count_30,
-                     sizeof(int_count_30));
-      lfs_file_close(&lfs, &int_count_save);
+      if (flags & CUT_FLAG) { // a trigger set cut flag
+        // Enable PWM channel outputs
+        LL_TIM_EnableCounter(TIM1);
+        LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
+        LL_TIM_OC_SetCompareCH3(TIM1, 0);
+        LL_TIM_EnableAllOutputs(TIM1);
+
+        sprintf(log_buf, "%lu, start cut %lu at %lu\n", boot_count, cut_counter,
+                log_item.time);
+
+        write_buf_to_fs(&lfs, &cfg, &log, "flight_log", log_buf,
+                        strlen(log_buf));
+      }
+      // end Termination Logic
 
       // -- Pressure Temp Conversion --
       if (ms5607_get_press_temp(&log_item.pressure, &log_item.temperature) ==
           -1)
-        sprintf(log_buf, "%lu, press/temp conv fail\n", boot_count);
+        sprintf(log_buf, "%lu, %lu, p/t conv fail\n", boot_count,
+                log_item.log_count);
       else
-        sprintf(log_buf, "%lu,%lu,%ld\n", boot_count, log_item.pressure,
-                log_item.temperature);
+        sprintf(log_buf, "%lu,%lu,%lu,%ld\n", boot_count, log_item.log_count,
+                log_item.pressure, log_item.temperature);
 
+      // Save pressure/temp data and current interval count
       err = lfs_mount(&lfs, &cfg);
 
       if (err) {
@@ -327,13 +358,22 @@ int main(void) {
 
       lfs_file_write(&lfs, &log, log_buf, strlen(log_buf));
 
+      // update 30 seond interval count
+      lfs_file_open(&lfs, &int_count_save, "int_count_30",
+                    LFS_O_RDWR | LFS_O_CREAT);
+      lfs_file_rewind(&lfs, &int_count_save);
+      lfs_file_write(&lfs, &int_count_save, &int_count_30,
+                     sizeof(int_count_30));
+      lfs_file_close(&lfs, &int_count_save);
+
       lfs_file_close(&lfs, &log);
       lfs_unmount(&lfs);
 
       // -- GPS read --
       if (get_gps_data() < 0) {
         // GPS parse failed
-        sprintf(log_buf, "%lu, GPS parse failed\n", boot_count);
+        sprintf(log_buf, "%lu, %lu, GPS parse failed\n", boot_count,
+                log_item.log_count);
         log_buf[99] = 0x00;
       } else {
 
@@ -380,6 +420,7 @@ int get_gps_data() {
   static uint32_t i = 0;
 
   // USART2 Support on GPIO headers
+  LL_USART_DisableDirectionRx(USART2);
   LL_USART_EnableDirectionRx(USART2);
   LL_USART_DisableDirectionTx(USART2);
 
@@ -404,7 +445,7 @@ buf[i] = (char)LL_I2C_ReceiveData8(I2C1);
 
     // USART2 RX
     while (LL_USART_IsActiveFlag_RXNE(USART2) == 0) { // wait for data
-      if (timeout >= 20000) {
+      if (timeout >= 50000) {
         return -1;
       }
       timeout++;
@@ -470,6 +511,9 @@ void read_log() {
   static char buf[100] = {0};
   uint32_t file_size = 0;
 
+  LL_USART_EnableDirectionRx(USART2);
+  LL_USART_EnableDirectionTx(USART2);
+
   int err = lfs_mount(&lfs, &cfg);
 
   if (err) {
@@ -478,7 +522,7 @@ void read_log() {
     // lfs_mount(&lfs, &cfg);
   }
 
-  lfs_file_open(&lfs, &log, "flight_log", LFS_O_RDONLY);
+  err = lfs_file_open(&lfs, &log, "flight_log", LFS_O_RDONLY);
   lfs_file_rewind(&lfs, &log);
 
   file_size = lfs_file_size(&lfs, &log);
@@ -488,6 +532,16 @@ void read_log() {
   while (lfs_file_tell(&lfs, &log) < lfs_file_size(&lfs, &log)) {
     for (int i = 0; i < 99; i++) {
       lfs_file_read(&lfs, &log, (buf + i), 1);
+      LL_USART_TransmitData8(USART2, buf[i]);
+
+      int timeout = 0;
+
+      while (LL_USART_IsActiveFlag_TC(USART2) == 0) {
+        if (timeout >= 50000)
+          break;
+        timeout++;
+      }
+
       if (buf[i] == 10) {
         buf[99] = 0x00;
         if (i < 98)
@@ -501,6 +555,28 @@ void read_log() {
 
   lfs_file_close(&lfs, &log);
   lfs_unmount(&lfs);
+}
+
+void dump_fram() {
+
+  uint8_t data = 0;
+
+  LL_USART_EnableDirectionTx(USART2);
+
+  for (int i = 0; i < 131072; i++) {
+
+    fram_read(&memory, SPI1, i, &data, 1);
+
+    LL_USART_TransmitData8(USART2, data);
+
+    int timeout = 0;
+
+    while (LL_USART_IsActiveFlag_TC(USART2) == 0) {
+      if (timeout >= 50000)
+        break;
+      timeout++;
+    }
+  }
 }
 
 void LPTIM1_IRQHandler(void) {
@@ -543,31 +619,6 @@ void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-static uint32_t read_adc1(void) {
-  // no idea how to read multiple channels actually?
-
-  uint16_t adcValCh1 = 0;
-  uint32_t realValue = 0;
-
-  // start conversion
-  LL_ADC_REG_StartConversion(ADC1);
-
-  // wait end of conversion flag
-  while (!LL_ADC_IsActiveFlag_EOC(ADC1))
-    ;
-
-  // clear flag
-  LL_ADC_ClearFlag_EOC(ADC1);
-
-  // read channel1 data
-  adcValCh1 = LL_ADC_REG_ReadConversionData12(ADC1);
-
-  realValue =
-      __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adcValCh1, LL_ADC_RESOLUTION_12B);
-
-  return realValue;
-}
 
 void USB_Init() {
   // Initialize the NVIC
