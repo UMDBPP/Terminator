@@ -1,3 +1,8 @@
+#ifndef _STM32_HELPER_H
+#define _STM32_HELPER_H
+
+ 
+
 #include <stdint.h>
 #include "stm32l4xx_ll_adc.h"
 #include "stm32l4xx_ll_comp.h"
@@ -18,8 +23,16 @@
 #include "stm32l4xx_ll_usart.h"
 #include "stm32l4xx_ll_iwdg.h"
 
+typedef struct _gpio_t {
+	GPIO_TypeDef *port;
+	uint32_t pin;
+} gpio_t;
+
+void gpio_put(gpio_t pin, uint8_t value);
 
 void spi_read(SPI_TypeDef *spix, uint8_t *const buf, uint32_t num_bytes);
+void spi_read_write(SPI_TypeDef *spix, uint8_t *const tx_buf,
+                    uint8_t *const rx_buf, uint32_t num_bytes);
 
 void spi_write(SPI_TypeDef *spix, const uint8_t *const buf,
                uint32_t num_bytes);
@@ -41,3 +54,5 @@ void MX_TIM1_Init(void);
 void MX_LPTIM1_Init(void);
 void MX_USART2_UART_Init(void);
 void MX_IWDG_Init(void);
+
+#endif // _STM32_HELPER_H

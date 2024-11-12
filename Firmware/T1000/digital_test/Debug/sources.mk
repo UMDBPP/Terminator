@@ -29,3 +29,4 @@ lib/FRAM_lib \
 lib/littlefs \
 lib/ms5607 \
 lib/PID \
+lib/sx1262 \

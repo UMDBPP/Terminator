@@ -16,7 +16,8 @@ INCLUDES := \
 	-I../lib/FRAM_Lib \
 	-I../lib/littlefs \
 	-I../lib/ms5607 \
-	-I../lib/PID
+	-I../lib/PID \
+	-I../lib/sx1262
 
 
 # All of the sources participating in the build are defined here
@@ -29,6 +30,7 @@ INCLUDES := \
 -include lib/littlefs/subdir.mk
 -include lib/ms5607/subdir.mk
 -include lib/PID/subdir.mk
+-include lib/sx1262/subdir.mk
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(strip $(S_DEPS)),)

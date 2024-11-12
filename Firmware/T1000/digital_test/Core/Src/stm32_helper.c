@@ -2,9 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+void gpio_put(gpio_t pin, uint8_t value) {
+  if (value)
+    LL_GPIO_SetOutputPin(pin.port, pin.pin);
+  else
+    LL_GPIO_ResetOutputPin(pin.port, pin.pin);
+}
+
 void spi_read(SPI_TypeDef *spix, uint8_t *const buf, uint32_t num_bytes) {
   for (int i = 0; i < num_bytes; i++) {
     buf[i] = SPI_TxRx(spix, 0x00);
+  }
+}
+
+void spi_read_write(SPI_TypeDef *spix, uint8_t *const tx_buf,
+                    uint8_t *const rx_buf, uint32_t num_bytes) {
+  for (int i = 0; i < num_bytes; i++) {
+    rx_buf[i] = SPI_TxRx(spix, tx_buf[i]);
   }
 }
 

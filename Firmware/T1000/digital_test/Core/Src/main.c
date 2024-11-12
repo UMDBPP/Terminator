@@ -7,6 +7,7 @@
 #include "fram.h"
 #include "lfs.h"
 #include "stm32_helper.h"
+#include "sx1262.h"
 
 #define PA8_HIGH LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_8);
 #define PA8_LOW LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_8);
@@ -38,6 +39,28 @@ static uint32_t flags =
     INT_TIM_EN_FLAG | GEO_EN_FLAG; // flags used for a variety of purposes
 
 fram_t memory; // off chip memory used to store non-volatile flight logs
+sx1262_t radio = {SPI1, (gpio_t){GPIOB, LL_GPIO_PIN_0}, {0, 0}};
+
+/*
+typedef struct _sx1262_t {
+  SPI_TypeDef *spix;
+  gpio_t cs_pin;
+  gpio_t sck_pin;
+  gpio_t mosi_pin;
+  gpio_t miso_pin;
+  gpio_t txen_pin;
+  gpio_t dio1_pin;
+  gpio_t busy_pin;
+  gpio_t sw_pin;
+  gpio_t rst_pin;
+  gpio_t tx_buffer = 0x00;
+  gpio_t rx_buffer = 0x7F;
+  gpio_t debug_msg_en = 0;
+  gpio_t status = 0x00;
+  radio_irq irqs;
+  radio_pkt_status pkt_stat;
+} sx1262_t;
+*/
 
 struct _log_item {
   uint32_t time;
