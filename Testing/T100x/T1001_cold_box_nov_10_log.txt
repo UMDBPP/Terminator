@@ -1,0 +1,307 @@
+1, Boot
+1,1,101703,2582
+1, 1, GPS parse failed
+1,2,101712,2595
+1, 2, GPS parse failed
+2, Boot
+3, Boot
+3,1,101700,2632
+3, 1, GPS parse failed
+3,2,101696,2632
+3, 2, GPS parse failed
+3,3,101692,2640
+3, 3, GPS parse failed
+3,4,101690,2655
+3, 4, GPS parse failed
+4, Boot
+4,1,101687,2691
+4, 1, GPS parse failed
+4,2,101684,2683
+4, 2, GPS parse failed
+4,3,101681,2681
+4, 3, GPS parse failed
+4,4,101683,2670
+4, 4, GPS parse failed
+4,5,101687,2669
+4, 5, GPS parse failed
+4,6,101688,2666
+4, 6, GPS parse failed
+4,7,101686,2666
+4, 7, GPS parse failed
+4,8,101687,2664
+4, 8, GPS parse failed
+4,9,101685,2669
+4, 9, GPS parse failed
+4,10,101683,2661
+4, 10, GPS parse failed
+4,11,101683,2659
+4, 11, GPS parse failed
+4,12,101681,2658
+4, 12, GPS parse failed
+4,13,101682,2659
+4, 13, GPS parse failed
+4,14,101683,2644
+4, 14, GPS parse failed
+4,15,101679,2636
+4, 15, GPS parse failed
+4,16,101678,2642
+4, 16, GPS parse failed
+4,17,101676,2646
+4, 17, GPS parse failed
+4,18,101671,2646
+4, 18, GPS parse failed
+4,19,101666,2646
+4, 19, GPS parse failed
+4,20,101663,2646
+4, 20, GPS parse failed
+4,21,101661,2643
+4, 21, GPS parse failed
+4,22,101662,2642
+4, 22, GPS parse failed
+4,23,101657,2640
+4, 23, GPS parse failed
+4,24,101646,2640
+4, 24, GPS parse failed
+4,25,101654,2639
+4, 25, GPS parse failed
+4,26,101650,2635
+4, 26, GPS parse failed
+4,27,101650,2633
+4, 27, GPS parse failed
+4,28,101649,2631
+4, 28, GPS parse failed
+4,29,101658,2640
+4, 29, GPS parse failed
+4,30,101667,2637
+4, 30, GPS parse failed
+4,31,101673,2640
+4, 31, GPS parse failed
+4,32,101675,2640
+4, 32, GPS parse failed
+4,33,101674,2641
+4, 33, GPS parse failed
+4,34,101673,2643
+4, 34, GPS parse failed
+4,35,101668,2645
+4, 35, GPS parse failed
+4,36,101671,2644
+4, 36, GPS parse failed
+4,37,101673,2645
+4, 37, GPS parse failed
+4,38,101676,2649
+4, 38, GPS parse failed
+4,39,101671,2650
+4, 39, GPS parse failed
+4,40,101673,2651
+4, 40, GPS parse failed
+4,41,101672,2649
+4, 41, GPS parse failed
+4,42,101665,2647
+4, 42, GPS parse failed
+4,43,101670,2651
+4, 43, GPS parse failed
+4,44,101659,2649
+4, 44, GPS parse failed
+4,45,101665,2650
+4, 45, GPS parse failed
+4,46,101666,2650
+4, 46, GPS parse failed
+4,47,101666,2650
+4, 47, GPS parse failed
+4,48,101669,2652
+4, 48, GPS parse failed
+4,49,101674,2648
+4, 49, GPS parse failed
+4,50,101672,2650
+4, 50, GPS parse failed
+4,51,101669,2647
+4, 51, GPS parse failed
+4,52,101675,2645
+4, 52, GPS parse failed
+4,53,101680,2647
+4, 53, GPS parse failed
+4,54,101678,2648
+4, 54, GPS parse failed
+4,55,101675,2646
+4, 55, GPS parse failed
+4,56,101675,2646
+4, 56, GPS parse failed
+4,57,101678,2645
+4, 57, GPS parse failed
+4,58,101672,2642
+4, 58, GPS parse failed
+4,59,101673,2642
+4, 59, GPS parse failed
+4,60,101673,2640
+4, 60, GPS parse failed
+4,61,101673,2644
+4, 61, GPS parse failed
+4,62,101671,2642
+4, 62, GPS parse failed
+4,63,101675,2641
+4, 63, GPS parse failed
+4,64,101676,2641
+4, 64, GPS parse failed
+4,65,101677,2643
+4, 65, GPS parse failed
+4,66,101677,2640
+4, 66, GPS parse failed
+4,67,101678,2641
+4, 67, GPS parse failed
+4,68,101677,2640
+4, 68, GPS parse failed
+4,69,101678,2642
+4, 69, GPS parse failed
+4,70,101676,2640
+4, 70, GPS parse failed
+4,71,101675,2638
+4, 71, GPS parse failed
+4,72,101668,2634
+4, 72, GPS parse failed
+4,73,101671,2631
+4, 73, GPS parse failed
+4,74,101670,2626
+4, 74, GPS parse failed
+4,75,101663,2627
+4, 75, GPS parse failed
+4,76,101663,2626
+4, 76, GPS parse failed
+4,77,101662,2625
+4, 77, GPS parse failed
+4,78,101661,2624
+4, 78, GPS parse failed
+4,79,101655,2624
+4, 79, GPS parse failed
+4,80,101653,2623
+4, 80, GPS parse failed
+4,81,101654,2624
+4, 81, GPS parse failed
+4,82,101655,2626
+4, 82, GPS parse failed
+4,83,101654,2626
+4, 83, GPS parse failed
+4,84,101661,2630
+4, 84, GPS parse failed
+4,85,101658,2629
+4, 85, GPS parse failed
+4,86,101664,2628
+4, 86, GPS parse failed
+4,87,101663,2629
+4, 87, GPS parse failed
+4,88,101667,2628
+4, 88, GPS parse failed
+4,89,101666,2624
+4, 89, GPS parse failed
+4, start cut 0 at 0
+4,90,101669,2627
+4, 90, GPS parse failed
+4, end cut 0 at 0
+4,91,101669,2636
+4, 91, GPS parse failed
+4, start cut 1 at 0
+4,92,101673,2637
+4, 92, GPS parse failed
+4, end cut 1 at 0
+4,93,101675,2636
+4, 93, GPS parse failed
+5, Boot
+6, Boot
+6,1,101639,2405
+6, 1, GPS parse failed
+6,2,101639,2337
+6, 2, GPS parse failed
+6,3,101645,2200
+6, 3, GPS parse failed
+6,4,101646,2032
+6, 4, GPS parse failed
+6,5,101662,1864
+6, 5, GPS parse failed
+6,6,101683,1688
+6, 6, GPS parse failed
+6,7,101704,1540
+6, 7, GPS parse failed
+6,8,101711,1452
+6, 8, GPS parse failed
+6,9,101709,1435
+6, 9, GPS parse failed
+6,10,101700,1460
+6, 10, GPS parse failed
+6,11,101746,1290
+6, 11, GPS parse failed
+6,12,101815,1038
+6, 12, GPS parse failed
+6,13,101953,646
+6, 13, GPS parse failed
+6,14,102183,141
+6, 14, GPS parse failed
+6,15,101851,-368
+6, 15, GPS parse failed
+6,16,102561,-878
+6, 16, GPS parse failed
+6,17,103169,-1356
+6, 17, GPS parse failed
+6,18,103661,-1766
+6, 18, GPS parse failed
+6,19,104086,-2138
+6, 19, GPS parse failed
+6,20,104451,-2463
+6, 20, GPS parse failed
+6,21,104772,-2752
+6, 21, GPS parse failed
+6,22,105060,-3012
+6, 22, GPS parse failed
+6,23,105322,-3238
+6, 23, GPS parse failed
+6,24,105557,-3438
+6, 24, GPS parse failed
+6,25,105775,-3615
+6, 25, GPS parse failed
+6,26,105974,-3770
+6, 26, GPS parse failed
+6,27,106161,-3912
+6, 27, GPS parse failed
+6,28,106331,-4033
+6, 28, GPS parse failed
+6,29,106509,-4147
+6, 29, GPS parse failed
+6,30,106664,-4243
+6, 30, GPS parse failed
+6,31,106815,-4330
+6, 31, GPS parse failed
+6,32,106958,-4408
+6, 32, GPS parse failed
+6,33,107087,-4475
+6, 33, GPS parse failed
+6,34,107207,-4538
+6, 34, GPS parse failed
+6,35,107336,-4597
+6, 35, GPS parse failed
+6,36,107460,-4650
+6, 36, GPS parse failed
+6,37,107573,-4700
+6, 37, GPS parse failed
+6,38,107687,-4746
+6, 38, GPS parse failed
+6,39,107806,-4790
+6, 39, GPS parse failed
+6,40,107912,-4829
+6, 40, GPS parse failed
+6,41,108022,-4866
+6, 41, GPS parse failed
+6,42,108126,-4900
+6, 42, GPS parse failed
+6,43,108223,-4930
+6, 43, GPS parse failed
+7, Boot
+8, Boot
+8,1,108477,-4990
+8, 1, GPS parse failed
+9, Boot
+10, Boot
+11, Boot
+12, Boot
+13, Boot
+14, Boot
+15, Boot
+17, Boot
+18, Boot
