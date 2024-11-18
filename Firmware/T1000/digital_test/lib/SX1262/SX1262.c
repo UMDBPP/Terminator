@@ -153,7 +153,7 @@ void sx1262_init() {
 void get_radio_status() {
   gpio_put(radio.cs_pin, 0);
   spi_write(radio.spix, &get_status_cmd, 1);
-  spi_read(radio.spix, &status, 1);
+  spi_read(radio.spix, &radio.status, 1);
   gpio_put(radio.cs_pin, 1);
   // printf("radio status: %x\n", status);
 }
@@ -162,9 +162,9 @@ void set_radio_standby() {
   gpio_put(radio.cs_pin, 0);
   spi_write(radio.spix, &set_standby_cmd, 1);
   spi_write(radio.spix, &StdbyConfig, 1);
-  spi_write(radio.spix, 1);
-  spi_write(radio.spix, 1);
-  spi_write(radio.spix, 1);
+  spi_write(radio.spix, &nop_cmd, 1);
+  spi_write(radio.spix, &nop_cmd, 1);
+  spi_write(radio.spix, &nop_cmd, 1);
   gpio_put(radio.cs_pin, 1);
 }
 
