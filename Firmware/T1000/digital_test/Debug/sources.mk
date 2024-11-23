@@ -30,3 +30,4 @@ lib/littlefs \
 lib/ms5607 \
 lib/PID \
 lib/sx1262 \
+lib/t1000_lib

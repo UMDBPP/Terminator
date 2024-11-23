@@ -9,18 +9,7 @@
 #include "lfs.h"
 #include "stm32_helper.h"
 #include "sx1262.h"
-
-#define PA8_HIGH LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_8);
-#define PA8_LOW LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_8);
-
-#define PA6_HIGH LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_6);
-#define PA6_LOW LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_6);
-
-static uint32_t read_adc1(void);
-int get_gps_data(void);
-void read_log(void);
-static int count_revifs(uint32_t n);
-void dump_fram(void);
+#include "t1000_helper.h"
 
 #define LOG_FLAG (0x01 << 0)
 #define CUT_FLAG (0x01 << 1)
@@ -38,6 +27,8 @@ void dump_fram(void);
 #define HEAT_FLAG (0x01 << 6) // indicates descent detected
 
 // Termination Logic parameters
+#define ROUTINE_INTERVAL                                                       \
+  30 // interval in number of seconds that the regular routine should run at
 uint32_t int_count_30 = 0;   // 30 second interval counter as counted by LPTIM1
 uint32_t cut_counter = 0;    // counts number of cut attempts
 uint32_t cut_int_timer = 60; // number of minutes until cut
@@ -47,60 +38,11 @@ static uint32_t flags =
 
 fram_t memory; // off chip memory used to store non-volatile flight logs
 sx1262_t radio = {SPI1, (gpio_t){GPIOB, LL_GPIO_PIN_0}, {0, 0}};
-
-struct _log_item {
-  uint32_t time;
-
-  int32_t lat_int;
-  uint32_t lat_frac;
-  char lat_dir;
-
-  int32_t lon_int;
-  uint32_t lon_frac;
-  char lon_dir;
-
-  uint32_t prev_altitude;
-  uint32_t altitude;
-
-  uint32_t date;
-
-  uint32_t prev_pressure;
-  uint32_t pressure;
-  int32_t temperature;
-  int64_t press_altitude;
-
-  uint32_t log_count;
-
-  uint32_t batt_v; // in mV
-} log_item;
-
-typedef struct _geo_vertex {
-
-  int32_t lat_int;
-  uint32_t lat_frac;
-  char lat_dir;
-
-  int32_t lon_int;
-  uint32_t lon_frac;
-  char lon_dir;
-
-} geo_vertex;
-
-geo_vertex empty_vertex = {0, 0, '0', 0, 0, '0'};
-
-struct _geo_fence {
-
-  geo_vertex top_left;
-  geo_vertex bot_left;
-  geo_vertex top_right;
-  geo_vertex bot_right;
-
-  uint32_t altitude;
-
-} geo_fence;
+log_item_t log_item;
 
 static char log_buf[100] = {0};
 
+// -- LittleFS Configuration --
 // configuration of the filesystem is provided by this struct
 const struct lfs_config cfg = {
     // block device operations
@@ -124,9 +66,9 @@ lfs_t lfs;
 lfs_file_t file;
 lfs_file_t log_file;
 lfs_file_t int_count_save;
+// end LittleFS
 
-// PID System
-
+// -- PID System --
 #define PID_KP 1
 #define PID_KI 1
 #define PID_KD 0
@@ -138,6 +80,10 @@ lfs_file_t int_count_save;
 
 #define PID_LIM_MIN_INT ((int32_t)(-100))
 #define PID_LIM_MAX_INT 100
+PIDController pid = {PID_KP,          PID_KI,          PID_KD,
+                     PID_TAU,         PID_LIM_MIN,     PID_LIM_MAX,
+                     PID_LIM_MIN_INT, PID_LIM_MAX_INT, 1};
+// end PID
 
 /**
  * @brief  The application entry point.
@@ -163,8 +109,8 @@ int main(void) {
 
   SystemClock_Config();
 
+  // Init Peripherals
   // USB_Init(); // needs testing
-
   MX_GPIO_Init();
   // MX_ADC1_Init();
   // MX_COMP1_Init();
@@ -173,12 +119,12 @@ int main(void) {
   MX_TIM1_Init();
   MX_LPTIM1_Init();
   // MX_USART2_UART_Init();
-  MX_IWDG_Init();
+  MX_IWDG_Init(); // init watchdog with 32 second timer
 
   // enable LPTIM1 which triggers interrupt every 30 seconds
   LL_LPTIM_Enable(LPTIM1);
   LL_LPTIM_EnableIT_ARRM(LPTIM1);
-  LL_LPTIM_SetAutoReload(LPTIM1, 7680); // 7680 = 30 seconds
+  LL_LPTIM_SetAutoReload(LPTIM1, (256 * ROUTINE_INTERVAL)); // 7680 = 30 seconds
   LL_LPTIM_StartCounter(LPTIM1, LL_LPTIM_OPERATING_MODE_CONTINUOUS);
 
   // Enable Peripherals
@@ -191,7 +137,6 @@ int main(void) {
   PA6_LOW
 
   fram_init(&memory, SPI1, 0, 0, 0, 0);
-
   // dump_fram();
 
   // -- Update Saved Values
@@ -215,10 +160,11 @@ int main(void) {
   // update 30 seond interval count
   lfs_file_open(&lfs, &int_count_save, "int_count_30",
                 LFS_O_RDWR | LFS_O_CREAT);
-  // lfs_file_read(&lfs, &int_count_save, &int_count_30, sizeof(int_count_30));
+  // lfs_file_read(&lfs, &int_count_save, &int_count_30,
+  // sizeof(int_count_30));
   lfs_file_close(&lfs, &int_count_save);
   lfs_unmount(&lfs);
-  // end non-volatile update
+  // end update saved values
 
   LL_IWDG_ReloadCounter(IWDG);
 
@@ -231,40 +177,26 @@ int main(void) {
   write_buf_to_fs(&lfs, &cfg, &log_file, "flight_log", log_buf,
                   strlen(log_buf));
 
-  read_log(); // dump log over USART2 on PA2
-
-  MX_ADC1_Init();
-  LL_ADC_Enable(ADC1);
+  // read_log(); // dump log over USART2 on PA2
 
   err = 0;
   log_item.lat_dir = '0';
   log_item.lon_dir = '0';
 
-  // set geofence parameters
-  geo_fence.top_left = empty_vertex;
-  geo_fence.bot_left = empty_vertex;
-  geo_fence.top_right = empty_vertex;
-  geo_fence.bot_right = empty_vertex;
-  geo_fence.altitude = 0;
+  geofence_init();
 
   // ms5607_reset();
   ms5607_init(I2C1);
   ms5607_get_press_temp(&log_item.pressure, &log_item.temperature);
 
+  // Enable ADC here since it shares pins with USART2 used in read_log()
+  MX_ADC1_Init();
+  LL_ADC_Enable(ADC1);
+
   // PID Init
-  PIDController pid = {PID_KP,          PID_KI,          PID_KD,
-                       PID_TAU,         PID_LIM_MIN,     PID_LIM_MAX,
-                       PID_LIM_MIN_INT, PID_LIM_MAX_INT, 1};
   PIDController_Init(&pid);
 
-  // Enable PWM channel outputs
-  // LL_TIM_EnableCounter(TIM1);
-  // LL_TIM_CC_EnableChannel(TIM1, LL_TIM_CHANNEL_CH3 | LL_TIM_CHANNEL_CH3N);
-  // LL_TIM_OC_SetCompareCH3(TIM1, 25);
-  // LL_TIM_EnableAllOutputs(TIM1);
-
-  // while (1)
-  //;
+  pid_blocking(); // little test function for characterizing power stage
 
   while (1) {
 
@@ -320,7 +252,6 @@ int main(void) {
       else
         isns_value = __LL_ADC_CALC_DATA_TO_VOLTAGE(3300, adc_value,
                                                    LL_ADC_RESOLUTION_12B);
-
       // end ADC read
 
       PIDController_Update(
@@ -332,7 +263,6 @@ int main(void) {
     // regular 30 second routine
     if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM1) || (flags & LOG_FLAG)) {
 
-      PA8_HIGH
       log_item.log_count++;
       int_count_30++;
 
@@ -358,7 +288,7 @@ int main(void) {
         flags = flags & ~(CUT_FLAG);
       }
 
-      // -- Pressure Temp Conversion --
+      // -- Pressure/Temp Conversion --
       log_item.prev_pressure = log_item.pressure;
       if (ms5607_get_press_temp(&log_item.pressure, &log_item.temperature) ==
           -1)
@@ -383,13 +313,7 @@ int main(void) {
       }
 
       // update 30 seond interval count
-      lfs_file_open(&lfs, &int_count_save, "int_count_30",
-                    LFS_O_RDWR | LFS_O_CREAT);
-      lfs_file_rewind(&lfs, &int_count_save);
-      lfs_file_write(&lfs, &int_count_save, &int_count_30,
-                     sizeof(int_count_30));
-      lfs_file_close(&lfs, &int_count_save);
-      lfs_unmount(&lfs);
+      update_int_count(int_count_30);
 
       // -- GPS read --
       log_item.prev_altitude = log_item.altitude;
@@ -451,7 +375,6 @@ int main(void) {
 
       write_buf_to_fs(&lfs, &cfg, &log_file, "flight_log", log_buf,
                       strlen(log_buf));
-
       // end ADC read
 
       // -- Thermal Management --
@@ -489,9 +412,9 @@ int main(void) {
 
       // -- Termination Logic --
       if (log_item.prev_pressure <
-          log_item.pressure) { // if pressure increased since last measurement,
-                               // might be descending, would be more accurate
-                               // with more historical data
+          log_item.pressure) { // if pressure increased since last
+                               // measurement, might be descending, would be
+                               // more accurate with more historical data
         if (log_item.pressure - log_item.prev_pressure >= 1000) {
 
           sprintf(log_buf, "%lu, %lu, DESC, press diff is %lu at %lu\n",
@@ -574,220 +497,10 @@ int main(void) {
 
       // clean up loop
       flags = flags & ~(LOG_FLAG);
-      PA8_LOW
       LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
     }
 
     LL_IWDG_ReloadCounter(IWDG);
-  }
-}
-
-// this function waits for NMEA messages and parses it into the log item
-// struct above
-int get_gps_data() {
-
-  static char buf[100] = {0};
-  static uint32_t len = 100;
-  static uint32_t i = 0;
-
-  // MX_USART2_UART_Init();
-
-  LL_USART_DisableOverrunDetect(USART2);
-  LL_USART_ClearFlag_ORE(USART2);
-
-  LL_USART_DisableDirectionRx(USART2);
-  LL_USART_EnableDirectionRx(USART2);
-  LL_USART_EnableDirectionTx(USART2);
-
-  while (1) { // poll I2C bus until end of line is received
-
-    int timeout = 0; // I2C software timeout counter
-
-    // I2C RX
-    LL_I2C_HandleTransfer(
-        I2C1, (0x42 << 1), LL_I2C_ADDRSLAVE_7BIT, 1, LL_I2C_MODE_AUTOEND,
-        LL_I2C_GENERATE_START_READ); // request 1 byte from GPS
-
-    while (LL_I2C_IsActiveFlag_RXNE(I2C1) == 0) { // wait for response
-      if (timeout >= 20000) {
-        return -1;
-      }
-      timeout++;
-    }
-
-    buf[i] = (char)LL_I2C_ReceiveData8(I2C1);
-
-    /*
-        // USART2 RX
-        LL_USART_ClearFlag_ORE(USART2);
-
-        while (LL_USART_IsActiveFlag_RXNE(USART2) == 0) { // wait for data
-          if (timeout >= 1000000) {
-            return -1;
-          }
-          timeout++;
-        }
-        buf[i] = (char)LL_USART_ReceiveData8(USART2);
-    */
-    /*
-timeout = 0;
-
-while (LL_USART_IsActiveFlag_TC(USART2) == 0) {
-if (timeout >= 50000)
-break;
-timeout++;
-}
-    */
-
-    if (buf[i] == '$') {
-      i = 0;
-      buf[i] = '$';
-    }
-
-    if (i >= (len - 1) || buf[i] == 10) {
-      buf[len - 1] = 0x00;
-      i = 0;
-
-      if ((i + 1) < len - 1)
-        buf[i + 1] = '\0';
-
-      if (strncmp((buf + 3), "GGA", 3) == 0) { // parse GGA message
-
-        // Print out GPS string over USART2 for debugging
-        /*
-                for (int i = 0; i <= 99; i++) {
-          LL_USART_TransmitData8(USART2, buf[i]);
-          int timeout = 0;
-
-          while (LL_USART_IsActiveFlag_TC(USART2) == 0) {
-            if (timeout >= 50000)
-              // break;
-              timeout++;
-          }
-          if (buf[i] == '\n')
-            break;
-        }
-                                */
-
-        write_buf_to_fs(&lfs, &cfg, &log_file, "flight_log", buf, strlen(buf));
-
-        sscanf(buf, "%*[^,],%lu.%*lu,%ld.%lu,%c,%lu.%lu,%c,%*d,%*d,%*d,%lu",
-               &(log_item.time), &(log_item.lat_int), &(log_item.lat_frac),
-               &(log_item.lat_dir), &(log_item.lon_int), &(log_item.lon_frac),
-               &(log_item.lon_dir), &(log_item.altitude));
-
-        // move the decimal point left 2 for coords
-        log_item.lat_frac =
-            ((log_item.lat_int % 100) * count_revifs(log_item.lat_frac)) +
-            log_item.lat_frac;
-        log_item.lat_int = log_item.lat_int - (log_item.lat_int % 100);
-
-        log_item.lon_frac =
-            ((log_item.lon_int % 100) * count_revifs(log_item.lon_frac)) +
-            log_item.lon_frac;
-        log_item.lon_int = log_item.lon_int - (log_item.lon_int % 100);
-
-        if (log_item.lat_dir == 'W')
-          log_item.lat_int = log_item.lat_int * -1;
-
-        if (log_item.lon_dir == 'S')
-          log_item.lon_int = log_item.lon_int * -1;
-
-        break;
-      }
-
-      if (strncmp((buf + 3), "RMC", 3) == 0) { // parse RMC message
-
-        write_buf_to_fs(&lfs, &cfg, &log_file, "flight_log", buf, strlen(buf));
-
-        sscanf(buf,
-               "%*[^,],%lu,%*c,%ld.%lu,%c,%lu.%lu,%c,%*lu.%*lu,%*lu.%*lu,%lu",
-               &(log_item.time), &(log_item.lat_int), &(log_item.lat_frac),
-               &(log_item.lat_dir), &(log_item.lon_int), &(log_item.lon_frac),
-               &(log_item.lon_dir), &(log_item.date));
-      }
-    }
-
-    if (buf[i] != 0xFF)
-      i++;
-  }
-
-  return 0;
-}
-
-// read the log file line by line
-void read_log() {
-
-  static char buf[100] = {0};
-  uint32_t file_size = 0;
-
-  MX_USART2_UART_Init();
-
-  LL_USART_EnableDirectionRx(USART2);
-  LL_USART_EnableDirectionTx(USART2);
-
-  int err = lfs_mount(&lfs, &cfg);
-
-  if (err) {
-    exit(-1); // trouble mounting FS
-    // lfs_format(&lfs, &cfg);
-    // lfs_mount(&lfs, &cfg);
-  }
-
-  err = lfs_file_open(&lfs, &log_file, "flight_log", LFS_O_RDONLY);
-  lfs_file_rewind(&lfs, &log_file);
-
-  file_size = lfs_file_size(&lfs, &log_file);
-
-  uint32_t pos = 0;
-
-  while (lfs_file_tell(&lfs, &log_file) < file_size) {
-    for (int i = 0; i < 99; i++) {
-      lfs_file_read(&lfs, &log_file, (buf + i), 1);
-      LL_USART_TransmitData8(USART2, buf[i]);
-
-      int timeout = 0;
-
-      while (LL_USART_IsActiveFlag_TC(USART2) == 0) {
-        if (timeout >= 50000)
-          break;
-        timeout++;
-      }
-
-      if (buf[i] == 10) {
-        buf[99] = 0x00;
-        if (i < 98)
-          buf[i + 1] = 0x00;
-        break;
-      }
-    }
-    pos = lfs_file_tell(&lfs, &log_file);
-    LL_IWDG_ReloadCounter(IWDG);
-  }
-
-  lfs_file_close(&lfs, &log_file);
-  lfs_unmount(&lfs);
-}
-
-void dump_fram() {
-
-  uint8_t data = 0;
-
-  LL_USART_EnableDirectionTx(USART2);
-
-  for (int i = 0; i < 131072; i++) {
-
-    fram_read(&memory, SPI1, i, &data, 1);
-
-    LL_USART_TransmitData8(USART2, data);
-
-    int timeout = 0;
-
-    while (LL_USART_IsActiveFlag_TC(USART2) == 0) {
-      if (timeout >= 50000)
-        break;
-      timeout++;
-    }
   }
 }
 
@@ -807,8 +520,9 @@ void LPTIM1_IRQHandler(void) {
  * @retval None
  */
 void Error_Handler(void) {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  /* USER CODE BEGIN Error_Handler_Debug
+   * User can add their own implementation to report the HAL error return state
+   */
   __disable_irq();
   while (1) {
   }
@@ -858,22 +572,3 @@ void USB_Init() {
 }
 
 void USB_IRQHandler() {}
-
-// counts number of digits in uint32_t, returns anywhere from 1-7
-static int count_revifs(uint32_t n) {
-  if (n > 999999)
-    return 7;
-  if (n > 99999)
-    return 6;
-  if (n > 9999)
-    return 5;
-  if (n > 999)
-    return 4;
-  if (n > 99)
-    return 3;
-  if (n > 9)
-    return 2;
-  return 1;
-}
-
-static int check_geo_fence() { return 0; }

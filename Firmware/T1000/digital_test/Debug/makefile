@@ -17,7 +17,8 @@ INCLUDES := \
 	-I../lib/littlefs \
 	-I../lib/ms5607 \
 	-I../lib/PID \
-	-I../lib/sx1262
+	-I../lib/sx1262 \
+	-I../lib/t1000_lib
 
 
 # All of the sources participating in the build are defined here
@@ -31,6 +32,7 @@ INCLUDES := \
 -include lib/ms5607/subdir.mk
 -include lib/PID/subdir.mk
 -include lib/sx1262/subdir.mk
+-include lib/t1000_lib/subdir.mk
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(strip $(S_DEPS)),)

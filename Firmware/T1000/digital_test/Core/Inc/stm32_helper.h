@@ -1,9 +1,8 @@
 #ifndef _STM32_HELPER_H
 #define _STM32_HELPER_H
-
  
-
 #include <stdint.h>
+
 #include "stm32l4xx_ll_adc.h"
 #include "stm32l4xx_ll_comp.h"
 #include "stm32l4xx_ll_exti.h"
@@ -22,6 +21,12 @@
 #include "stm32l4xx_ll_lptim.h"
 #include "stm32l4xx_ll_usart.h"
 #include "stm32l4xx_ll_iwdg.h"
+
+#define PA8_HIGH LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_8);
+#define PA8_LOW LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_8);
+#define PA8_TOGGLE LL_GPIO_TogglePin(GPIOA, LL_GPIO_PIN_8);
+#define PA6_HIGH LL_GPIO_SetOutputPin(GPIOA, LL_GPIO_PIN_6);
+#define PA6_LOW LL_GPIO_ResetOutputPin(GPIOA, LL_GPIO_PIN_6);
 
 typedef struct _gpio_t {
 	GPIO_TypeDef *port;

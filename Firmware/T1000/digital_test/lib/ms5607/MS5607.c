@@ -4,24 +4,6 @@
 #include "stm32l4xx_ll_i2c.h"
 #include "stm32l4xx_ll_utils.h"
 
-#define MS5607_ADDR 0x77
-#define MS5607_RESET_CMD 0x1E
-
-#define MS5607_READ_C1_CMD 0xA2
-#define MS5607_READ_C2_CMD 0xA4
-#define MS5607_READ_C3_CMD 0xA6
-#define MS5607_READ_C4_CMD 0xA8
-#define MS5607_READ_C5_CMD 0xAA
-#define MS5607_READ_C6_CMD 0xAC
-#define MS5607_READ_CRC_CMD 0xAE
-
-#define MS5607_PRESS_CONV_CMD 0x48 // OSR = 4096
-#define MS5607_TEMP_CONV_CMD 0x58  // OSR = 4096
-#define MS5607_READ_CMD 0x00
-
-#define false 0
-#define true 1
-
 static int read_prom(void);
 static int conversion(void);
 
@@ -36,11 +18,12 @@ static uint32_t d2 = 0;
 static int64_t dT = 0;
 static int64_t off = 0;
 static int64_t sens = 0;
-I2C_TypeDef *i2c;
+static I2C_TypeDef *i2c;
+
+#define DELAY 10
 
 // these two I2C functions are not good, the args are mostly unused but writing
 // the signature like this made copying RP2040 code faster
-
 static int i2c_read_blocking(I2C_TypeDef *i2cx, uint8_t addr, uint8_t *buf,
                              uint32_t bytes, uint32_t temp) {
   int timeout = 0; // I2C software timeout counter
@@ -84,7 +67,6 @@ static int i2c_write_blocking(I2C_TypeDef *i2cx, uint8_t addr, uint8_t *buf,
 }
 
 int ms5607_init(I2C_TypeDef *i2cx) {
-  // TODO
   if (read_prom() == -1)
     return -1;
   else
@@ -94,7 +76,7 @@ int ms5607_init(I2C_TypeDef *i2cx) {
 int ms5607_reset() {
   uint8_t cmd = MS5607_RESET_CMD;
 
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
   else
     read_prom();
@@ -162,50 +144,50 @@ static int read_prom() {
   uint8_t buf[2] = {0, 0};
 
   uint8_t cmd = MS5607_READ_C1_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
+  LL_mDelay(DELAY);
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, 0) == -1)
     return -1;
   c1 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C2_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
+  LL_mDelay(DELAY);
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, 0) == -1)
     return -1;
   c2 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C3_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
+  LL_mDelay(DELAY);
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, 0) == -1)
     return -1;
   c3 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C4_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
+  LL_mDelay(DELAY);
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, 0) == -1)
     return -1;
   c4 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C5_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
+  LL_mDelay(DELAY);
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, 0) == -1)
     return -1;
   c5 = ((uint16_t)buf[0] << 8) | buf[1];
 
   cmd = MS5607_READ_C6_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, false) == -1)
+  LL_mDelay(DELAY);
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 2, 0) == -1)
     return -1;
   c6 = ((uint16_t)buf[0] << 8) | buf[1];
 
@@ -216,16 +198,16 @@ static int conversion() {
   uint8_t buf[3] = {0, 0, 0};
 
   uint8_t cmd = MS5607_PRESS_CONV_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
+  LL_mDelay(DELAY);
 
   cmd = MS5607_READ_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
+  LL_mDelay(DELAY);
 
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 3, false) == -1)
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 3, 0) == -1)
     return -1;
 
   d1 = ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2];
@@ -235,16 +217,16 @@ static int conversion() {
   buf[2] = 0;
 
   cmd = MS5607_TEMP_CONV_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
+  LL_mDelay(DELAY);
 
   cmd = MS5607_READ_CMD;
-  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, false) == -1)
+  if (i2c_write_blocking(i2c, MS5607_ADDR, &cmd, 1, 0) == -1)
     return -1;
-  LL_mDelay(20);
+  LL_mDelay(DELAY);
 
-  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 3, false) == -1)
+  if (i2c_read_blocking(i2c, MS5607_ADDR, buf, 3, 0) == -1)
     return -1;
 
   d2 = ((uint32_t)buf[0] << 16) | ((uint32_t)buf[1] << 8) | buf[2];

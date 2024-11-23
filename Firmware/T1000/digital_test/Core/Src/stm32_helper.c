@@ -189,9 +189,70 @@ int8_t user_i2c_write(uint8_t id, uint8_t reg_addr, uint8_t *data,
  * @retval None
  */
 
+// void SystemClock_Config(void) {
+//   LL_FLASH_SetLatency(LL_FLASH_LATENCY_4);
+//   while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_4) {
+//   }
+//   LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+//   while (LL_PWR_IsActiveFlag_VOS() != 0) {
+//   }
+//   LL_RCC_HSE_EnableBypass();
+//   LL_RCC_HSE_Enable();
+//
+//   /* Wait till HSE is ready */
+//   while (LL_RCC_HSE_IsReady() != 1) {
+//   }
+//
+//   LL_RCC_MSI_Enable();
+//
+//   /* Wait till MSI is ready */
+//   while (LL_RCC_MSI_IsReady() != 1) {
+//   }
+//   LL_RCC_MSI_EnableRangeSelection();
+//   LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_6);
+//   LL_RCC_MSI_SetCalibTrimming(0);
+//   LL_PWR_EnableBkUpAccess();
+//
+//   LL_RCC_LSI_Enable();
+//
+//   /* Wait till LSI is ready */
+//   while (LL_RCC_LSI_IsReady() != 1) {
+//   }
+//
+//   LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
+//   LL_RCC_LSE_Enable();
+//
+//   /* Wait till LSE is ready */
+//   while (LL_RCC_LSE_IsReady() != 1) {
+//   }
+//
+//   LL_RCC_MSI_EnablePLLMode();
+//   LL_RCC_PLL_ConfigDomain_48M(LL_RCC_PLLSOURCE_MSI, LL_RCC_PLLM_DIV_1, 24,
+//                               LL_RCC_PLLQ_DIV_2);
+//   LL_RCC_PLL_EnableDomain_48M();
+//   LL_RCC_PLL_Enable();
+//
+//   /* Wait till PLL is ready */
+//   while (LL_RCC_PLL_IsReady() != 1) {
+//   }
+//
+//   LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
+//
+//   /* Wait till System clock is ready */
+//   while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+//   }
+//   LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+//   LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+//   LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
+//
+//   LL_Init1msTick(25000000);
+//
+//   LL_SetSystemCoreClock(25000000);
+// }
+
 void SystemClock_Config(void) {
-  LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
-  while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_1) {
+  LL_FLASH_SetLatency(LL_FLASH_LATENCY_4);
+  while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_4) {
   }
   LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
   while (LL_PWR_IsActiveFlag_VOS() != 0) {
@@ -202,52 +263,38 @@ void SystemClock_Config(void) {
   /* Wait till HSE is ready */
   while (LL_RCC_HSE_IsReady() != 1) {
   }
-
-  LL_RCC_MSI_Enable();
-
-  /* Wait till MSI is ready */
-  while (LL_RCC_MSI_IsReady() != 1) {
-  }
-  LL_RCC_MSI_EnableRangeSelection();
-  LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_6);
-  LL_RCC_MSI_SetCalibTrimming(0);
-  LL_PWR_EnableBkUpAccess();
-
   LL_RCC_LSI_Enable();
 
   /* Wait till LSI is ready */
   while (LL_RCC_LSI_IsReady() != 1) {
   }
-
+  LL_PWR_EnableBkUpAccess();
   LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
   LL_RCC_LSE_Enable();
 
   /* Wait till LSE is ready */
   while (LL_RCC_LSE_IsReady() != 1) {
   }
-
-  LL_RCC_MSI_EnablePLLMode();
-  LL_RCC_PLL_ConfigDomain_48M(LL_RCC_PLLSOURCE_MSI, LL_RCC_PLLM_DIV_1, 24,
-                              LL_RCC_PLLQ_DIV_2);
-  LL_RCC_PLL_EnableDomain_48M();
+  LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE, LL_RCC_PLLM_DIV_5, 32,
+                              LL_RCC_PLLR_DIV_2);
+  LL_RCC_PLL_EnableDomain_SYS();
   LL_RCC_PLL_Enable();
 
   /* Wait till PLL is ready */
   while (LL_RCC_PLL_IsReady() != 1) {
   }
-
-  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSE);
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
 
   /* Wait till System clock is ready */
-  while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSE) {
+  while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL) {
   }
   LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
   LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
   LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
 
-  LL_Init1msTick(25000000);
+  LL_Init1msTick(80000000);
 
-  LL_SetSystemCoreClock(25000000);
+  LL_SetSystemCoreClock(80000000);
 }
 
 /**

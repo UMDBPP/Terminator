@@ -24,3 +24,4 @@
 "./lib/ms5607/MS5607.o"
 "./lib/PID/PID.o"
 "./lib/sx1262/SX1262.o"
+"./lib/t1000_lib/t1000_helper.o"
