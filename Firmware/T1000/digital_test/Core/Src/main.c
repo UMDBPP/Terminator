@@ -139,7 +139,7 @@ int main(void) {
   fram_init(&memory, SPI1, 0, 0, 0, 0);
   // dump_fram();
 
-  // -- Update Saved Values
+  // -- Update Saved Values --
   err = lfs_mount(&lfs, &cfg);
 
   if (err) {
@@ -470,7 +470,7 @@ int main(void) {
         }
       }
 
-      if (flags & CUT_FLAG &&
+      if ((flags & CUT_FLAG) &&
           (flags &
            ~(DESC_FLAG))) { // a trigger set cut flag AND descent not detected
 
@@ -489,7 +489,6 @@ int main(void) {
 
         sprintf(log_buf, "%lu, start cut %lu at %lu\n", boot_count, cut_counter,
                 log_item.time);
-
         write_buf_to_fs(&lfs, &cfg, &log_file, "flight_log", log_buf,
                         strlen(log_buf));
       }

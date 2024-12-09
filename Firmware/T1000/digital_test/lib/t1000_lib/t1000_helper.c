@@ -138,7 +138,7 @@ void pid_blocking(void) {
     // end ADC read
 
     PIDController_Update(
-        &pid, 1000,
+        &pid, 435,
         isns_value); // update PID controller with set point 1000mV
     LL_TIM_OC_SetCompareCH3(TIM1, pid.out); // pid.out
   }

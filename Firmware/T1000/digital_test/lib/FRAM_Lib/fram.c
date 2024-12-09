@@ -72,6 +72,8 @@ int fram_wrdi(fram_t *dev) {
   spi_write(dev->spi_device, &cmd, 1);
 
   CS_HIGH
+
+  return 0;
 }
 
 int fram_rdsr(fram_t *dev) {

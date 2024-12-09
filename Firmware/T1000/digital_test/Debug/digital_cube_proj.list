@@ -27,25 +27,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000030  00000000  00000000  000110bc  2**0
                   CONTENTS, READONLY
- 12 .debug_info   00013965  00000000  00000000  000110ec  2**0
+ 12 .debug_info   0001354a  00000000  00000000  000110ec  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00002598  00000000  00000000  00024a51  2**0
+ 13 .debug_abbrev 0000255f  00000000  00000000  00024636  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 000012e8  00000000  00000000  00026ff0  2**3
+ 14 .debug_aranges 00001280  00000000  00000000  00026b98  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00001005  00000000  00000000  000282d8  2**0
+ 15 .debug_rnglists 00000fb5  00000000  00000000  00027e18  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  0001cbf2  00000000  00000000  000292dd  2**0
+ 16 .debug_macro  0001cbf2  00000000  00000000  00028dcd  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0000dc47  00000000  00000000  00045ecf  2**0
+ 17 .debug_line   0000d956  00000000  00000000  000459bf  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0008db60  00000000  00000000  00053b16  2**0
+ 18 .debug_str    0008dacd  00000000  00000000  00053315  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000045  00000000  00000000  000e1676  2**0
+ 19 .comment      00000045  00000000  00000000  000e0de2  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00006138  00000000  00000000  000e16bc  2**2
+ 20 .debug_frame  00005f3c  00000000  00000000  000e0e28  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000172  00000000  00000000  000e77f4  2**0
+ 21 .debug_line_str 00000172  00000000  00000000  000e6d64  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1148,7 +1148,7 @@ int main(void) {
  8000806:	f003 f8af 	bl	8003968 <fram_init>
   // dump_fram();
 
-  // -- Update Saved Values
+  // -- Update Saved Values --
   err = lfs_mount(&lfs, &cfg);
  800080a:	4979      	ldr	r1, [pc, #484]	@ (80009f0 <main+0x2a8>)
  800080c:	4879      	ldr	r0, [pc, #484]	@ (80009f4 <main+0x2ac>)
@@ -2366,7 +2366,7 @@ int main(void) {
         }
       }
 
-      if (flags & CUT_FLAG &&
+      if ((flags & CUT_FLAG) &&
  8001066:	4b22      	ldr	r3, [pc, #136]	@ (80010f0 <main+0x9a8>)
  8001068:	681b      	ldr	r3, [r3, #0]
  800106a:	f003 0302 	and.w	r3, r3, #2
@@ -2376,7 +2376,7 @@ int main(void) {
  8001072:	4b1f      	ldr	r3, [pc, #124]	@ (80010f0 <main+0x9a8>)
  8001074:	681b      	ldr	r3, [r3, #0]
  8001076:	f023 0320 	bic.w	r3, r3, #32
-      if (flags & CUT_FLAG &&
+      if ((flags & CUT_FLAG) &&
  800107a:	2b00      	cmp	r3, #0
  800107c:	d05c      	beq.n	8001138 <main+0x9f0>
            ~(DESC_FLAG))) { // a trigger set cut flag AND descent not detected
@@ -2424,7 +2424,6 @@ int main(void) {
  80010c6:	480d      	ldr	r0, [pc, #52]	@ (80010fc <main+0x9b4>)
  80010c8:	f00b f85e 	bl	800c188 <siprintf>
                 log_item.time);
-
         write_buf_to_fs(&lfs, &cfg, &log_file, "flight_log", log_buf,
                         strlen(log_buf));
  80010cc:	480b      	ldr	r0, [pc, #44]	@ (80010fc <main+0x9b4>)
@@ -5146,13 +5145,13 @@ void spi_read(SPI_TypeDef *spix, uint8_t *const buf, uint32_t num_bytes) {
  80020be:	2300      	movs	r3, #0
  80020c0:	617b      	str	r3, [r7, #20]
  80020c2:	e00b      	b.n	80020dc <spi_read+0x2a>
-    buf[i] = SPI_TxRx(spix, 0x00);
+    buf[i] = spi_transfer(spix, 0x00);
  80020c4:	697b      	ldr	r3, [r7, #20]
  80020c6:	68ba      	ldr	r2, [r7, #8]
  80020c8:	18d4      	adds	r4, r2, r3
  80020ca:	2100      	movs	r1, #0
  80020cc:	68f8      	ldr	r0, [r7, #12]
- 80020ce:	f000 f82b 	bl	8002128 <SPI_TxRx>
+ 80020ce:	f000 f82b 	bl	8002128 <spi_transfer>
  80020d2:	4603      	mov	r3, r0
  80020d4:	7023      	strb	r3, [r4, #0]
   for (int i = 0; i < num_bytes; i++) {
@@ -5172,7 +5171,7 @@ void spi_read(SPI_TypeDef *spix, uint8_t *const buf, uint32_t num_bytes) {
  80020ec:	bd90      	pop	{r4, r7, pc}
 
 080020ee <spi_write>:
-    rx_buf[i] = SPI_TxRx(spix, tx_buf[i]);
+    rx_buf[i] = spi_transfer(spix, tx_buf[i]);
   }
 }
 
@@ -5188,14 +5187,14 @@ void spi_write(SPI_TypeDef *spix, const uint8_t *const buf,
  80020fa:	2300      	movs	r3, #0
  80020fc:	617b      	str	r3, [r7, #20]
  80020fe:	e00a      	b.n	8002116 <spi_write+0x28>
-    SPI_TxRx(spix, buf[i]);
+    spi_transfer(spix, buf[i]);
  8002100:	697b      	ldr	r3, [r7, #20]
  8002102:	68ba      	ldr	r2, [r7, #8]
  8002104:	4413      	add	r3, r2
  8002106:	781b      	ldrb	r3, [r3, #0]
  8002108:	4619      	mov	r1, r3
  800210a:	68f8      	ldr	r0, [r7, #12]
- 800210c:	f000 f80c 	bl	8002128 <SPI_TxRx>
+ 800210c:	f000 f80c 	bl	8002128 <spi_transfer>
   for (int i = 0; i < num_bytes; i++)
  8002110:	697b      	ldr	r3, [r7, #20]
  8002112:	3301      	adds	r3, #1
@@ -5211,11 +5210,10 @@ void spi_write(SPI_TypeDef *spix, const uint8_t *const buf,
  8002124:	46bd      	mov	sp, r7
  8002126:	bd80      	pop	{r7, pc}
 
-08002128 <SPI_TxRx>:
+08002128 <spi_transfer>:
 
-// Lifted and modified from https://github.com/eziya/STM32_LL_EXAMPLES
-// is blocking
-uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data) {
+// Blocking SPI transfer
+uint8_t spi_transfer(SPI_TypeDef *spix, uint8_t data) {
  8002128:	b580      	push	{r7, lr}
  800212a:	b082      	sub	sp, #8
  800212c:	af00      	add	r7, sp, #0
@@ -5234,7 +5232,7 @@ uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data) {
  8002142:	f7ff fd49 	bl	8001bd8 <LL_SPI_IsActiveFlag_TXE>
  8002146:	4603      	mov	r3, r0
  8002148:	2b00      	cmp	r3, #0
- 800214a:	d0f9      	beq.n	8002140 <SPI_TxRx+0x18>
+ 800214a:	d0f9      	beq.n	8002140 <spi_transfer+0x18>
     ;
 
   // receive
@@ -5244,7 +5242,7 @@ uint8_t SPI_TxRx(SPI_TypeDef *spix, uint8_t data) {
  8002150:	f7ff fd2f 	bl	8001bb2 <LL_SPI_IsActiveFlag_RXNE>
  8002154:	4603      	mov	r3, r0
  8002156:	2b00      	cmp	r3, #0
- 8002158:	d0f9      	beq.n	800214e <SPI_TxRx+0x26>
+ 8002158:	d0f9      	beq.n	800214e <spi_transfer+0x26>
     ;
   return LL_SPI_ReceiveData8(spix);
  800215a:	6878      	ldr	r0, [r7, #4]
@@ -28214,20 +28212,13 @@ int32_t PIDController_Update(PIDController *pid, int32_t setpoint,
  800b610:	60b9      	str	r1, [r7, #8]
  800b612:	607a      	str	r2, [r7, #4]
 
-  /*
-   * Error signal
-   */
   error = setpoint - measurement;
  800b614:	68ba      	ldr	r2, [r7, #8]
  800b616:	687b      	ldr	r3, [r7, #4]
  800b618:	1ad3      	subs	r3, r2, r3
  800b61a:	4a2c      	ldr	r2, [pc, #176]	@ (800b6cc <PIDController_Update+0xc4>)
  800b61c:	6013      	str	r3, [r2, #0]
-  // static int32_t proportional = pid->Kp * error;
 
-  /*
-   * Integral
-   */
   pid->integrator = pid->integrator + ((error + pid->prevError) / (int32_t)100);
  800b61e:	68fb      	ldr	r3, [r7, #12]
  800b620:	6a5a      	ldr	r2, [r3, #36]	@ 0x24
@@ -28245,7 +28236,7 @@ int32_t PIDController_Update(PIDController *pid, int32_t setpoint,
  800b63a:	68fb      	ldr	r3, [r7, #12]
  800b63c:	625a      	str	r2, [r3, #36]	@ 0x24
 
-  /* Anti-wind-up via integrator clamping */
+  // Anti-wind-up via integrator clamping
   if (pid->integrator > pid->limMaxInt) {
  800b63e:	68fb      	ldr	r3, [r7, #12]
  800b640:	6a5a      	ldr	r2, [r3, #36]	@ 0x24
@@ -28274,11 +28265,9 @@ int32_t PIDController_Update(PIDController *pid, int32_t setpoint,
  800b662:	699a      	ldr	r2, [r3, #24]
  800b664:	68fb      	ldr	r3, [r7, #12]
  800b666:	625a      	str	r2, [r3, #36]	@ 0x24
-        (2.0f * pid->tau + pid->T);
-  */
-  /*
-   * Compute output and apply limits
-   */
+  }
+
+  // Compute output and apply limits
   pid->out = (error / 30) + (pid->integrator);
  800b668:	4b18      	ldr	r3, [pc, #96]	@ (800b6cc <PIDController_Update+0xc4>)
  800b66a:	681b      	ldr	r3, [r3, #0]
@@ -29161,10 +29150,10 @@ void pid_blocking(void) {
     PIDController_Update(
  800bbe8:	68fb      	ldr	r3, [r7, #12]
  800bbea:	461a      	mov	r2, r3
- 800bbec:	f44f 717a 	mov.w	r1, #1000	@ 0x3e8
+ 800bbec:	f240 11b3 	movw	r1, #435	@ 0x1b3
  800bbf0:	480b      	ldr	r0, [pc, #44]	@ (800bc20 <pid_blocking+0x17c>)
  800bbf2:	f7ff fd09 	bl	800b608 <PIDController_Update>
-        &pid, 1000,
+        &pid, 435,
         isns_value); // update PID controller with set point 1000mV
     LL_TIM_OC_SetCompareCH3(TIM1, pid.out); // pid.out
  800bbf6:	4b0a      	ldr	r3, [pc, #40]	@ (800bc20 <pid_blocking+0x17c>)

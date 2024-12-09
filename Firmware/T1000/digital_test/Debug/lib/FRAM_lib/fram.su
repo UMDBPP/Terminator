@@ -4,7 +4,7 @@
 ../lib/FRAM_lib/fram.c:38:5:fram_get_id	24	static
 ../lib/FRAM_lib/fram.c:54:5:fram_wren	24	static
 ../lib/FRAM_lib/fram.c:67:5:fram_wrdi	24	static
-../lib/FRAM_lib/fram.c:77:5:fram_rdsr	16	static
-../lib/FRAM_lib/fram.c:82:5:fram_wrsr	16	static
-../lib/FRAM_lib/fram.c:87:5:fram_write	32	static
-../lib/FRAM_lib/fram.c:112:5:fram_read	32	static
+../lib/FRAM_lib/fram.c:79:5:fram_rdsr	16	static
+../lib/FRAM_lib/fram.c:84:5:fram_wrsr	16	static
+../lib/FRAM_lib/fram.c:89:5:fram_write	32	static
+../lib/FRAM_lib/fram.c:114:5:fram_read	32	static
