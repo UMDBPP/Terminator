@@ -1,0 +1,4 @@
+../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_ll_comp.h:819:26:LL_COMP_IsLocked	2
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.c:178:13:LL_COMP_DeInit	2
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.c:215:13:LL_COMP_Init	2
+../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_ll_comp.c:294:6:LL_COMP_StructInit	1

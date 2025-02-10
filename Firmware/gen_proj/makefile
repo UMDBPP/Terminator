@@ -2,9 +2,10 @@
 # output binary
 BIN := ./build/test.elf
 
-# source files, any .c in the src directory, any .c (exclude files ending with template.c) in the hal directory, and two specific files needed for startup and other functions
+# source files, any .c in the src directory, any .c (exclude files ending with template.c) 
+# in the hal directory, and two specific files needed for startup and other functions
 SRCS := \
-	$(wildcard ./vendor/STM32L4_HAL/Src/*[!t][!e][!m][!p][!l][!a][!t][!e].c) \
+	$(wildcard ./vendor/STM32L4_HAL/Src/*[!t][!e][!m][!p][!l][!a][!t][!e]*.c) \
 	./vendor/CMSIS/Device/ST/STM32L4/Source/Templates/gcc/startup_stm32l412xx.s \
 	./vendor/CMSIS/Device/ST/STM32L4/Source/Templates/system_stm32l4xx.c \
 	$(wildcard ./src/*.c)

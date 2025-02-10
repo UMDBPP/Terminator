@@ -15,7 +15,7 @@ build/.o/./src/main.o: src/main.c \
  vendor/CMSIS/Device/ST/STM32L4/Include/system_stm32l4xx.h \
  vendor/CMSIS/Device/ST/STM32L4/Include/stm32l4xx.h \
  vendor/CMSIS/Device/ST/STM32L4/Include/stm32l412xx.h \
- vendor/STM32L4_HAL/Inc/stm32l4xx_ll_gpio.h
+ vendor/STM32L4_HAL/Inc/stm32l4xx_ll_gpio.h src/st_helper_func.h
 /Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/lib/gcc/arm-none-eabi/13.3.1/include/stdint.h:
 /Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/stdint.h:
 /Applications/ArmGNUToolchain/13.3.rel1/arm-none-eabi/arm-none-eabi/include/machine/_default_types.h:
@@ -33,3 +33,4 @@ vendor/CMSIS/Device/ST/STM32L4/Include/system_stm32l4xx.h:
 vendor/CMSIS/Device/ST/STM32L4/Include/stm32l4xx.h:
 vendor/CMSIS/Device/ST/STM32L4/Include/stm32l412xx.h:
 vendor/STM32L4_HAL/Inc/stm32l4xx_ll_gpio.h:
+src/st_helper_func.h:
