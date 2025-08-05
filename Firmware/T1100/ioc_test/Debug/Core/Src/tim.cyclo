@@ -1,0 +1,9 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:449:22:LL_AHB2_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:1303:22:LL_APB2_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_tim.h:1609:22:LL_TIM_DisableARRPreload	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_tim.h:2315:22:LL_TIM_OC_DisableFast	9
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_tim.h:2367:22:LL_TIM_OC_EnablePreload	9
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_tim.h:3232:22:LL_TIM_SetTriggerOutput	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_tim.h:3262:22:LL_TIM_SetTriggerOutput2	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_tim.h:3329:22:LL_TIM_DisableMasterSlaveMode	1
+../Core/Src/tim.c:28:6:MX_TIM1_Init	1

@@ -1,0 +1,11 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_rcc.h:2119:22:LL_RCC_SetLPTIMClockSource	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:914:22:LL_APB1_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:468:22:LL_LPTIM_SetUpdateMode	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:591:22:LL_LPTIM_SetCounterMode	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:667:22:LL_LPTIM_SetPolarity	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:705:22:LL_LPTIM_SetPrescaler	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:740:22:LL_LPTIM_SetInput1Src	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:754:22:LL_LPTIM_SetInput2Src	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:816:22:LL_LPTIM_TrigSw	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:931:22:LL_LPTIM_SetClockSource	1
+../Core/Src/lptim.c:28:6:MX_LPTIM1_Init	1

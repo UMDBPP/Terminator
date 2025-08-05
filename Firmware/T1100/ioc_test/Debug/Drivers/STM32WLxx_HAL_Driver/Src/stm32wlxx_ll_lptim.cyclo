@@ -1,0 +1,17 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_rcc.h:2119:22:LL_RCC_SetLPTIMClockSource	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_rcc.h:2249:26:LL_RCC_GetLPTIMClockSource	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:1062:22:LL_APB1_GRP1_ForceReset	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:1079:22:LL_APB1_GRP2_ForceReset	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:1107:22:LL_APB1_GRP1_ReleaseReset	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:1124:22:LL_APB1_GRP2_ReleaseReset	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:385:26:LL_LPTIM_IsEnabled	2
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:1164:22:LL_LPTIM_ClearFlag_CMPOK	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:1176:26:LL_LPTIM_IsActiveFlag_CMPOK	2
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:1187:22:LL_LPTIM_ClearFlag_ARROK	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:1199:26:LL_LPTIM_IsActiveFlag_ARROK	2
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:1256:22:LL_LPTIM_ClearFlag_REPOK	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lptim.h:1268:26:LL_LPTIM_IsActiveFlag_REPOK	2
+../Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_ll_lptim.c:95:13:LL_LPTIM_DeInit	4
+../Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_ll_lptim.c:131:6:LL_LPTIM_StructInit	1
+../Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_ll_lptim.c:150:13:LL_LPTIM_Init	2
+../Drivers/STM32WLxx_HAL_Driver/Src/stm32wlxx_ll_lptim.c:193:6:LL_LPTIM_Disable	21

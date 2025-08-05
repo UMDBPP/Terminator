@@ -1,0 +1,12 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:449:22:LL_AHB2_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:1303:22:LL_APB2_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:2198:22:LL_ADC_SetTriggerFrequencyMode	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:2260:22:LL_ADC_SetSamplingTimeCommonChannels	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:2466:22:LL_ADC_REG_SetSequencerConfigurable	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:4052:22:LL_ADC_SetOverSamplingScope	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:4218:22:LL_ADC_EnableInternalRegulator	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:4569:26:LL_ADC_IsActiveFlag_CCRDY	2
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:4682:22:LL_ADC_ClearFlag_CCRDY	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:4921:22:LL_ADC_DisableIT_EOC	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_adc.h:4932:22:LL_ADC_DisableIT_EOS	1
+../Core/Src/adc.c:28:6:MX_ADC_Init	3

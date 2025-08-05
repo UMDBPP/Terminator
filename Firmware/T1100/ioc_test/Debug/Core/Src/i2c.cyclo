@@ -1,0 +1,9 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_rcc.h:2096:22:LL_RCC_SetI2CClockSource	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:449:22:LL_AHB2_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:914:22:LL_APB1_GRP1_EnableClock	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:644:22:LL_I2C_EnableClockStretching	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:764:22:LL_I2C_DisableGeneralCall	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:875:22:LL_I2C_SetOwnAddress2	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:897:22:LL_I2C_DisableOwnAddress2	1
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_i2c.h:1879:22:LL_I2C_EnableAutoEndMode	1
+../Core/Src/i2c.c:28:6:MX_I2C1_Init	1

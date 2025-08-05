@@ -1,0 +1,9 @@
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_rcc.h:2076:22:LL_RCC_SetLPUARTClockSource	16	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:449:22:LL_AHB2_GRP1_EnableClock	24	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_bus.h:935:22:LL_APB1_GRP2_EnableClock	24	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lpuart.h:495:22:LL_LPUART_Enable	16	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lpuart.h:576:22:LL_LPUART_SetTXFIFOThreshold	40	static,ignoring_inline_asm
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lpuart.h:611:22:LL_LPUART_SetRXFIFOThreshold	40	static,ignoring_inline_asm
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lpuart.h:1762:26:LL_LPUART_IsActiveFlag_TEACK	16	static
+../Drivers/STM32WLxx_HAL_Driver/Inc/stm32wlxx_ll_lpuart.h:1773:26:LL_LPUART_IsActiveFlag_REACK	16	static
+../Core/Src/usart.c:29:6:MX_LPUART1_UART_Init	64	static
