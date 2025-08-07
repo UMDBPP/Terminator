@@ -80,6 +80,8 @@
 /* USER CODE BEGIN PV */
 
 uint8_t RadioCmd[3] = { 0x00, 0x00, 0x00 };
+uint8_t RadioErr[3] = { 0x00, 0x00, 0x00 };
+uint8_t RadioTCXO[4] = { 0x01, 0x01, 0x02, 0x80 };
 uint8_t RadioResult = 0x00;
 uint8_t RadioParam = 0x00;
 uint8_t RadioMode = 0x00;
@@ -179,8 +181,9 @@ int main(void) {
 	MX_ADC_Init();
 	MX_TIM1_Init();
 	MX_LPUART1_UART_Init();
-	MX_SUBGHZ_Init();
 	/* USER CODE BEGIN 2 */
+
+	MX_SUBGHZ_Init();
 
 	set_heater_params(T_HIGH, T_LOW);
 
@@ -195,8 +198,23 @@ int main(void) {
 		Error_Handler();
 	}
 
+	RadioParam = 0x01;
+
 	/* Set Standby Mode */
 	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	RadioParam = 0x00;
+
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_ERROR, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	/* Set Standby Mode */
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TCXOMODE, RadioTCXO, 4)
 			!= HAL_OK) {
 		Error_Handler();
 	}
@@ -217,7 +235,62 @@ int main(void) {
 
 	/*## 2 - Set a TX on SUBGHZ Radio side #####################################*/
 	/* Set Tx Mode. RadioCmd = 0x00 Timeout deactivated */
+	/*if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, RadioCmd, 3) != HAL_OK) {
+	 Error_Handler();
+	 }
+	 */
+
+	const uint32_t frequency = 915000000;
+	uint8_t buf[4];
+	uint32_t freq = 0;
+
+	freq = (uint32_t) ((double) frequency / (double) FREQ_STEP );
+	buf[0] = (uint8_t) ((freq >> 24) & 0xFF);
+	buf[1] = (uint8_t) ((freq >> 16) & 0xFF);
+	buf[2] = (uint8_t) ((freq >> 8) & 0xFF);
+	buf[3] = (uint8_t) (freq & 0xFF);
+
+	/* Reset RadioResult */
+	RadioResult = 0x00;
+
+	/* Retrieve Status from SUBGHZ Radio */
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, buf, 4)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	/*
+	 if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXCONTINUOUSWAVE, RadioCmd, 0)
+	 != HAL_OK) {
+	 Error_Handler();
+	 }
+	 */
+
 	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, RadioCmd, 3) != HAL_OK) {
+		//Error_Handler();
+	}
+
+	hsubghz.ErrorCode = 0;
+
+	HAL_Delay(1000);
+
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+			!= HAL_OK) {
 		Error_Handler();
 	}
 
