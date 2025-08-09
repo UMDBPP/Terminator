@@ -61,7 +61,7 @@ void MX_ADC_Init(void)
    uint32_t Timeout ; /* Variable used for Timeout management */
    #endif /* USE_TIMEOUT */
 
-  ADC_InitStruct.Clock = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
+  ADC_InitStruct.Clock = LL_ADC_CLOCK_SYNC_PCLK_DIV1;
   ADC_InitStruct.Resolution = LL_ADC_RESOLUTION_12B;
   ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;

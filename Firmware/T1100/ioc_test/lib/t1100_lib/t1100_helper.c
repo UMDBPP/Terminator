@@ -396,7 +396,7 @@ int log_init() {
 	res = f_open(&csvFile, "data.csv", FA_WRITE | FA_OPEN_APPEND);
 	if (res == FR_OK) {
 		// CSV column headers
-		const char *header = " ,time,lat,long,altitude,temp,press,b_temp\r\n";
+		const char *header = " ,time,lat,long,altitude,temp,press,b_temp,aRate,f_aRate\r\n";
 
 		res = f_write(&csvFile, header, strlen(header), &bytes_written);
 
@@ -420,11 +420,11 @@ int log_system_data() {
 	res = f_open(&csvFile, "data.csv", FA_WRITE | FA_OPEN_APPEND);
 	if (res == FR_OK) {
 
-		snprintf(csv_line, 256, "%lu,%lu,%ld.%lu,%ld.%lu,%ld,%ld,%lu,%ld\r\n",
+		snprintf(csv_line, 256, "%lu,%lu,%ld.%lu,%ld.%lu,%ld,%ld,%lu,%ld,%ld,%ld\r\n",
 				log_item.log_count, log_item.time, log_item.lat_int,
 				log_item.lat_frac, log_item.lon_int, log_item.lon_frac,
 				log_item.altitude, log_item.temperature, log_item.pressure,
-				log_item.board_temp);
+				log_item.board_temp,log_item.ascent_rate,log_item.filtered_ascent_rate);
 
 		res = f_write(&csvFile, csv_line, strlen(csv_line), &bytes_written);
 
@@ -440,5 +440,26 @@ int log_system_data() {
 	}
 
 	return 0;
+}
+
+void log_timeout() {
+
+	FRESULT res;
+
+	res = f_open(&csvFile, "data.csv", FA_WRITE | FA_OPEN_APPEND);
+	if (res == FR_OK) {
+
+		snprintf(csv_line, 256, "gps timeout\n");
+
+		res = f_write(&csvFile, csv_line, strlen(csv_line), &bytes_written);
+
+		if (res != FR_OK) {
+
+		}
+
+		// Close file after writing
+		f_close(&csvFile);
+
+	}
 }
 

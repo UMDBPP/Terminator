@@ -40,4 +40,6 @@ void spi_read_write(SPI_TypeDef *spix, uint8_t *const tx_buf,
 
 void spi_write(SPI_TypeDef *spix, const uint8_t *const buf, uint32_t num_bytes);
 
+void log_timeout(void);
+
 #endif // _STM32_HELPER_H

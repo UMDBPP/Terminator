@@ -40,6 +40,7 @@
 #include "stm32_helper.h"
 #include "sx1262.h"
 #include "t1100_helper.h"
+#include "IIRFirstOrder.h"
 
 #include "subghz.h"
 
@@ -67,6 +68,7 @@
 #define LORA_SYMBOL_TIMEOUT                         5         /* Symbols */
 
 #define RADIO_MODE_STANDBY_RC 0x02
+#define RADIO_MODE_STANDBY_XOSC 0x03
 #define RADIO_MODE_TX 0x06
 #define RADIO_COMMAND_TX_DONE 0x06
 
@@ -82,10 +84,17 @@
 uint8_t RadioCmd[3] = { 0x00, 0x00, 0x00 };
 uint8_t RadioErr[3] = { 0x00, 0x00, 0x00 };
 uint8_t RadioTCXO[4] = { 0x01, 0x01, 0x02, 0x80 };
+uint8_t RadioTxParams[2] = { 0x16, 0x04 };
 uint8_t RadioResult = 0x00;
 uint8_t RadioParam = 0x00;
 uint8_t RadioMode = 0x00;
 uint8_t RadioStatus = 0x00;
+uint8_t RadioPAconfig[4] = { 0x04, 0x07, 0x00, 0x01 };
+uint8_t RadioBaseAddr[2] = { 0x00, 0x7F };
+uint8_t RadioModParams[4] = { 0x0A, 0x04, 0x04, 0x00 };
+uint8_t RadioPacketParams[6] = { 0x00, 0x0F, 0x00, 0x64, 0x01, 0x00 };
+
+uint8_t tx_buf[] = "terminator alive!";
 
 #define LOG_FLAG (0x01 << 0)
 #define CUT_FLAG (0x01 << 1)
@@ -117,11 +126,18 @@ log_item_t log_item;
 
 static char log_buf[100] = { 0 };
 
+IIRFirstOrder iir;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+
+void setup_radio(void);
+void set_rf_switch_rx(void);
+void set_rf_switch_tx(void);
+void radio_tx(uint8_t *buf, uint16_t bytes);
 
 /* USER CODE END PFP */
 
@@ -154,22 +170,6 @@ int main(void) {
 
 	/* USER CODE BEGIN SysInit */
 
-	/*** GPIO Configuration (for debugging) ***/
-	/* DEBUG_SUBGHZSPI_NSSOUT = PA4
-	 * DEBUG_SUBGHZSPI_SCKOUT = PA5
-	 * DEBUG_SUBGHZSPI_MISOOUT = PA6
-	 * DEBUG_SUBGHZSPI_MOSIOUT = PA7
-	 * DEBUG_RF_HSE32RDY = PA10
-	 * DEBUG_RF_NRESET = PA11
-	 * DEBUG_RF_SMPSRDY = PB2
-	 * DEBUG_RF_DTB1 = PB3 <---- Conflicts with RF_IRQ0
-	 * DEBUG_RF_LDORDY = PB4
-	 * RF_BUSY = PA12
-	 * RF_IRQ0 = PB3
-	 * RF_IRQ1 = PB5
-	 * RF_IRQ2 = PB8
-	 */
-
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
@@ -183,7 +183,7 @@ int main(void) {
 	MX_LPUART1_UART_Init();
 	/* USER CODE BEGIN 2 */
 
-	MX_SUBGHZ_Init();
+	setup_radio();
 
 	set_heater_params(T_HIGH, T_LOW);
 
@@ -191,153 +191,7 @@ int main(void) {
 
 	ms5607_init(I2C1); // init pressure, temperature, and relative humidity sensor
 
-	/*## 1 - Wakeup the SUBGHZ Radio ###########################################*/
-	/* Set Sleep Mode */
-	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_SLEEP, &RadioParam, 1)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	RadioParam = 0x01;
-
-	/* Set Standby Mode */
-	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, &RadioParam, 1)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	RadioParam = 0x00;
-
-	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_ERROR, &RadioParam, 1)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	/* Set Standby Mode */
-	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TCXOMODE, RadioTCXO, 4)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	/* Retrieve Status from SUBGHZ Radio */
-	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
-			!= HAL_OK) {
-		Error_Handler();
-	} else {
-		/* Format Mode and Status receive from SUBGHZ Radio */
-		RadioMode = ((RadioResult & RADIO_MODE_BITFIELD) >> 4);
-
-		/* Check if SUBGHZ Radio is in RADIO_MODE_STANDBY_RC mode */
-		if (RadioMode != RADIO_MODE_STANDBY_RC) {
-			Error_Handler();
-		}
-	}
-
-	/*## 2 - Set a TX on SUBGHZ Radio side #####################################*/
-	/* Set Tx Mode. RadioCmd = 0x00 Timeout deactivated */
-	/*if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, RadioCmd, 3) != HAL_OK) {
-	 Error_Handler();
-	 }
-	 */
-
-	const uint32_t frequency = 915000000;
-	uint8_t buf[4];
-	uint32_t freq = 0;
-
-	freq = (uint32_t) ((double) frequency / (double) FREQ_STEP );
-	buf[0] = (uint8_t) ((freq >> 24) & 0xFF);
-	buf[1] = (uint8_t) ((freq >> 16) & 0xFF);
-	buf[2] = (uint8_t) ((freq >> 8) & 0xFF);
-	buf[3] = (uint8_t) (freq & 0xFF);
-
-	/* Reset RadioResult */
-	RadioResult = 0x00;
-
-	/* Retrieve Status from SUBGHZ Radio */
-	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, buf, 4)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	/*
-	 if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXCONTINUOUSWAVE, RadioCmd, 0)
-	 != HAL_OK) {
-	 Error_Handler();
-	 }
-	 */
-
-	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, RadioCmd, 3) != HAL_OK) {
-		//Error_Handler();
-	}
-
-	hsubghz.ErrorCode = 0;
-
-	HAL_Delay(1000);
-
-	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	/*## 3 - Get TX status from SUBGHZ Radio side ##############################*/
-	/* Check that TX is well ongoing (RADIO_MODE_TX), wait end of transfer */
-
-	/* Reset RadioResult */
-	RadioResult = 0x00;
-
-	/* Retrieve Status from SUBGHZ Radio */
-	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
-			!= HAL_OK) {
-		Error_Handler();
-	}
-
-	/* Format Mode and Status receive from SUBGHZ Radio */
-	RadioMode = ((RadioResult & RADIO_MODE_BITFIELD) >> 4);
-	RadioStatus = ((RadioResult & RADIO_STATUS_BITFIELD) >> 1);
-
-	if (RadioMode == RADIO_MODE_TX) {
-		/* Wait end of transfer. SUBGHZ Radio go in Standby Mode */
-		do {
-			/* Reset RadioResult */
-			RadioResult = 0x00;
-
-			/* Retrieve Status from SUBGHZ Radio */
-			if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult,
-					1) != HAL_OK) {
-				Error_Handler();
-			}
-
-			/* Format Mode and Status receive from SUBGHZ Radio */
-			RadioMode = ((RadioResult & RADIO_MODE_BITFIELD) >> 4);
-			RadioStatus = ((RadioResult & RADIO_STATUS_BITFIELD) >> 1);
-		} while (RadioMode != RADIO_MODE_STANDBY_RC);
-	} else {
-		/* Call Error Handler; LED1 blinking */
-		Error_Handler();
-	}
-
-	/* Check if TX is well done  (SUBGHZ Radio already in Standby mode) */
-	if (RadioStatus == RADIO_COMMAND_TX_DONE) {
-		// nothing
-	} else {
-		/* Call Error Handler; LED1 blinking */
-		Error_Handler();
-	}
+	IIRFirstOrder_Init(&iir, 980);
 
 	/* USER CODE END 2 */
 
@@ -352,9 +206,18 @@ int main(void) {
 
 		log_item.board_temp = read_heater_temp();
 
-		get_gps_data();
+		if (get_gps_data() == -1)
+			log_timeout();
 
 		log_system_data();
+
+		log_item.ascent_rate = log_item.altitude - log_item.prev_altitude;
+		log_item.prev_altitude = log_item.altitude;
+		log_item.filtered_ascent_rate = IIRFirstOrder_Update(&iir,
+				log_item.ascent_rate);
+
+		if (log_item.log_count % 30 == 0)
+			radio_tx(tx_buf, sizeof(tx_buf));
 
 		HAL_Delay(1000);
 
@@ -370,8 +233,8 @@ int main(void) {
  * @retval None
  */
 void SystemClock_Config(void) {
-	LL_FLASH_SetLatency(LL_FLASH_LATENCY_2);
-	while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_2) {
+	LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
+	while (LL_FLASH_GetLatency() != LL_FLASH_LATENCY_1) {
 	}
 
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
@@ -382,7 +245,7 @@ void SystemClock_Config(void) {
 	}
 
 	LL_RCC_MSI_EnableRangeSelection();
-	LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_11);
+	LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_10);
 	LL_RCC_MSI_SetCalibTrimming(0);
 	LL_PWR_EnableBkUpAccess();
 	LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_LOW);
@@ -405,7 +268,7 @@ void SystemClock_Config(void) {
 	LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
 	LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
 	/* Update CMSIS variable (which can be updated also through SystemCoreClockUpdate function) */
-	LL_SetSystemCoreClock(48000000);
+	LL_SetSystemCoreClock(32000000);
 
 	/* Update the time base */
 	if (HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK) {
@@ -414,6 +277,273 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
+
+void setup_radio(void) {
+
+	MX_SUBGHZ_Init();
+
+	//set standby
+
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_SLEEP, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	RadioParam = 0x00;
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	RadioParam = 0x00;
+
+	// set tcxo
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TCXOMODE, RadioTCXO, 4)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	RadioParam = 0x01;
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_STANDBY, &RadioParam, 1)
+			!= HAL_OK) {
+		//Error_Handler();
+		hsubghz.ErrorCode = 0;
+
+		while (LL_PWR_IsActiveFlag_RFBUSYS() & LL_PWR_IsActiveFlag_RFBUSYMS())
+			;
+	}
+	RadioParam = 0x00;
+
+	RadioParam = 0x30;
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXFALLBACKMODE, &RadioParam,
+			1) != HAL_OK) {
+		Error_Handler();
+	}
+	RadioParam = 0x00;
+
+	/*
+	 RadioParam = 0x7F;
+	 if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CALIBRATE, &RadioParam, 1)
+	 != HAL_OK) {
+	 //Error_Handler();
+	 hsubghz.ErrorCode = 0;
+
+	 while (LL_PWR_IsActiveFlag_RFBUSYS() & LL_PWR_IsActiveFlag_RFBUSYMS())
+	 ;
+	 }
+	 RadioParam = 0x00;
+	 */
+
+	// set packet type
+	RadioParam = 0x01;
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETTYPE, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	RadioParam = 0x00;
+
+	HAL_SUBGHZ_ReadRegister(&hsubghz, 0x916, &RadioParam);
+	HAL_SUBGHZ_WriteRegister(&hsubghz, 0x916, RadioParam | 0x40);
+	RadioParam = 0x00;
+
+	// set rf switch
+	set_rf_switch_rx();
+
+	// set reg mode
+	RadioParam = 0x01;
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_REGULATORMODE, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+	RadioParam = 0x00;
+
+	// clear errors
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_ERROR, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	// get errors
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	// set rf freq
+	const uint32_t frequency = 915000000;
+	uint8_t buf[4];
+	uint32_t freq = 0;
+
+	freq = (uint32_t) ((double) frequency / (double) FREQ_STEP );
+	buf[0] = (uint8_t) ((freq >> 24) & 0xFF);
+	buf[1] = (uint8_t) ((freq >> 16) & 0xFF);
+	buf[2] = (uint8_t) ((freq >> 8) & 0xFF);
+	buf[3] = (uint8_t) (freq & 0xFF);
+
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RFFREQUENCY, buf, 4)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	// set pa config
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACONFIG, RadioPAconfig, 4)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	// set tx params
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TXPARAMS, RadioTxParams, 2)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	// set buffer base address
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_BUFFERBASEADDRESS,
+			RadioBaseAddr, 2) != HAL_OK) {
+		Error_Handler();
+	}
+
+	// set modulation params
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_MODULATIONPARAMS,
+			RadioModParams, 4) != HAL_OK) {
+		Error_Handler();
+	}
+
+	// set packet params
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_PACKETPARAMS,
+			RadioPacketParams, 6) != HAL_OK) {
+		Error_Handler();
+	}
+
+	// set sync word
+	//HAL_SUBGHZ_WriteRegister(&hsubghz, 0x0740, 0x34);
+	//HAL_SUBGHZ_WriteRegister(&hsubghz, 0x0741, 0x44);
+
+	// set symbol timeout
+	RadioParam = 0x00;
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_LORASYMBTIMEOUT, &RadioParam,
+			1) != HAL_OK) {
+		Error_Handler();
+	}
+	RadioParam = 0x00;
+
+	// get errors
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+}
+
+void set_rf_switch_rx(void) {
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+}
+
+void set_rf_switch_tx(void) {
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+}
+
+void radio_tx(uint8_t *buf, uint16_t bytes) {
+
+	HAL_SUBGHZ_WriteBuffer(&hsubghz, 0, buf, bytes);
+
+	set_rf_switch_tx();
+
+	// clear errors
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_ERROR, &RadioParam, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_TX, RadioCmd, 3) != HAL_OK) {
+		//Error_Handler();
+	}
+
+	hsubghz.ErrorCode = 0;
+
+	while (LL_PWR_IsActiveFlag_RFBUSYS() & LL_PWR_IsActiveFlag_RFBUSYMS())
+		;
+
+	/* Reset RadioResult */
+	RadioResult = 0x00;
+
+	// get errors
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+			!= HAL_OK) {
+		Error_Handler();
+	}
+
+	/*
+	 RadioMode = ((RadioResult & RADIO_MODE_BITFIELD) >> 4);
+	 RadioStatus = ((RadioResult & RADIO_STATUS_BITFIELD) >> 1);
+
+	 if (RadioMode == RADIO_MODE_TX) {
+	 do {
+	 RadioResult = 0x00;
+
+	 if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult,
+	 1) != HAL_OK) {
+	 Error_Handler();
+	 }
+
+	 RadioMode = ((RadioResult & RADIO_MODE_BITFIELD) >> 4);
+	 RadioStatus = ((RadioResult & RADIO_STATUS_BITFIELD) >> 1);
+	 } while (RadioMode != RADIO_MODE_STANDBY_RC
+	 && RadioMode != RADIO_MODE_STANDBY_XOSC);
+	 } else if (RadioStatus == RADIO_COMMAND_TX_DONE) { // Check if TX is well done  (SUBGHZ Radio already in Standby mode)
+	 // nothing
+	 } else {
+	 //Error_Handler();
+	 }
+
+	 set_rf_switch_rx();
+
+	 // clear errors
+	 if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_CLR_ERROR, &RadioParam, 1)
+	 != HAL_OK) {
+	 Error_Handler();
+	 }
+
+	 if (HAL_SUBGHZ_ExecSetCmd(&hsubghz, RADIO_SET_RX, RadioCmd, 3) != HAL_OK) {
+	 //Error_Handler();
+	 }
+
+	 hsubghz.ErrorCode = 0;
+
+	 while (LL_PWR_IsActiveFlag_RFBUSYS() & LL_PWR_IsActiveFlag_RFBUSYMS())
+	 ;
+
+
+	 RadioResult = 0x00;
+
+	 // get errors
+	 if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_STATUS, &RadioResult, 1)
+	 != HAL_OK) {
+	 Error_Handler();
+	 }
+
+	 if (HAL_SUBGHZ_ExecGetCmd(&hsubghz, RADIO_GET_ERROR, RadioErr, 3)
+	 != HAL_OK) {
+	 Error_Handler();
+	 }
+	 */
+
+}
 
 /* USER CODE END 4 */
 

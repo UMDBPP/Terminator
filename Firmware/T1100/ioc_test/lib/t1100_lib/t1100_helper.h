@@ -48,6 +48,8 @@ typedef struct _log_item_t {
 
 	int32_t prev_altitude;
 	int32_t altitude;
+	int32_t ascent_rate;
+	int32_t filtered_ascent_rate;
 
 	uint32_t date;
 

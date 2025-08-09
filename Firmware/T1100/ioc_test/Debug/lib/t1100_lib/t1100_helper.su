@@ -26,4 +26,5 @@
 ../lib/t1100_lib/t1100_helper.c:338:5:i2c_read_blocking	48	static
 ../lib/t1100_lib/t1100_helper.c:359:5:i2c_write_blocking	40	static
 ../lib/t1100_lib/t1100_helper.c:380:5:log_init	16	static
-../lib/t1100_lib/t1100_helper.c:417:5:log_system_data	80	static
+../lib/t1100_lib/t1100_helper.c:417:5:log_system_data	96	static
+../lib/t1100_lib/t1100_helper.c:445:6:log_timeout	16	static
