@@ -1,0 +1,1 @@
+Cutdown power stage for T1000 nichrome. [Click here to view in browser.](https://kicanvas.org/?github=https%3A%2F%2Fgithub.com%2FUMDBPP%2FTerminator%2Ftree%2Fmain%2FHardware%2FT1000%2FCutdown_Power%2Fcutdown)
