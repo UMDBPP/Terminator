@@ -198,7 +198,11 @@ int main(void) {
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 
+	LL_LPUART_EnableDirectionTx(LPUART1);
+
 	while (1) {
+
+		LL_LPUART_TransmitData8(LPUART1, 'm');
 
 		log_item.log_count++;
 
